@@ -1,0 +1,112 @@
+name: Lint Report
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  eslint:
+    name: ESLint Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        id: eslint
+        run: |
+          npm run lint > eslint-output.txt 2>&1 || true
+          cat eslint-output.txt
+
+      - name: Create ESLint report
+        run: |
+          echo "## 🔍 ESLint Report" > eslint-report.md
+          echo "" >> eslint-report.md
+
+          if grep -q "warning\|error" eslint-output.txt; then
+            echo "### Issues Found" >> eslint-report.md
+            echo "" >> eslint-report.md
+            echo '```' >> eslint-report.md
+            cat eslint-output.txt >> eslint-report.md
+            echo '```' >> eslint-report.md
+          else
+            echo "✅ No linting issues found!" >> eslint-report.md
+          fi
+
+      - name: Comment ESLint results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('eslint-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+  prettier:
+    name: Prettier Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Prettier check
+        id: prettier
+        run: |
+          npm run format:check > prettier-output.txt 2>&1 || true
+          cat prettier-output.txt
+
+      - name: Create Prettier report
+        run: |
+          echo "## 💅 Prettier Check" > prettier-report.md
+          echo "" >> prettier-report.md
+
+          if grep -q "Code style issues found" prettier-output.txt; then
+            echo "### Formatting Issues Found" >> prettier-report.md
+            echo "" >> prettier-report.md
+            echo "Run \`npm run format\` to fix formatting issues automatically." >> prettier-report.md
+            echo "" >> prettier-report.md
+            echo '```' >> prettier-report.md
+            cat prettier-output.txt >> prettier-report.md
+            echo '```' >> prettier-report.md
+          else
+            echo "✅ All files are properly formatted!" >> prettier-report.md
+          fi
+
+      - name: Comment Prettier results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('prettier-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

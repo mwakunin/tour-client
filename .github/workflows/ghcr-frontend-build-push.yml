@@ -1,0 +1,174 @@
+# Docker Build and Push Frontend to GitHub Container Registry
+# ============================================================
+name: Docker Build and Push Frontend to GHCR
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/footloose-frontend
+
+jobs:
+  build-and-push:
+    name: Build and Push Frontend Docker Image to GHCR
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          install: true
+
+      - name: 🔐 Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔤 Normalize image name
+        id: image
+        run: |
+          echo "name=$(echo ${{ env.IMAGE_NAME }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: 🏷️ Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix={{branch}}-,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=prod-{{date 'YYYYMMDD-HHmmss'}},enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.title=Footloose Adventures Frontend
+            org.opencontainers.image.description=Next.js frontend for Footloose Adventures booking system
+            org.opencontainers.image.vendor=Footloose Adventures
+            org.opencontainers.image.created={{date 'YYYY-MM-DDTHH:mm:ssZ'}}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.url=https://github.com/${{ github.repository }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+
+      - name: 🏗️ Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          target: production
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          provenance: false
+
+      - name: 🔬 Verify image
+        run: |
+          echo "::group::Image Verification"
+          docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest
+          echo "🏗️ Image layers:"
+          docker history ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest --no-trunc --human | head -20
+          echo "🚪 Exposed ports:"
+          docker inspect ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest --format='{{json .Config.ExposedPorts}}' | jq '.'
+          echo "✅ Image verification passed"
+          echo "::endgroup::"
+
+      - name: 📊 Generate build summary
+        if: success()
+        run: |
+          echo "## Frontend Docker Build Summary 🎨" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Published Image" >> $GITHUB_STEP_SUMMARY
+          echo "**Registry:** \`${{ env.REGISTRY }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Image:** \`${{ steps.image.outputs.name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🏷️ Tags Published" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo '${{ steps.meta.outputs.tags }}' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🎯 Pull Commands" >> $GITHUB_STEP_SUMMARY
+          echo '```bash' >> $GITHUB_STEP_SUMMARY
+          echo '# Pull latest' >> $GITHUB_STEP_SUMMARY
+          echo 'docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest' >> $GITHUB_STEP_SUMMARY
+          echo '' >> $GITHUB_STEP_SUMMARY
+          echo '# Pull by digest (immutable)' >> $GITHUB_STEP_SUMMARY
+          echo 'docker pull ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}@${{ steps.build.outputs.digest }}' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🚀 Deploy to Railway" >> $GITHUB_STEP_SUMMARY
+          echo "Frontend image is ready for deployment!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Railway Configuration:**" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo 'Image: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest' >> $GITHUB_STEP_SUMMARY
+          echo 'Port: 3000' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment Variables to Set in Railway:**" >> $GITHUB_STEP_SUMMARY
+          echo '- `NEXT_PUBLIC_API_URL` - Your API endpoint URL' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** Railway automatically authenticates with GHCR if your GitHub is connected." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔒 Package Visibility" >> $GITHUB_STEP_SUMMARY
+          echo "Your image is **private** by default on GHCR." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To make it public (optional):" >> $GITHUB_STEP_SUMMARY
+          echo "1. Go to: https://github.com/${{ github.repository_owner }}?tab=packages" >> $GITHUB_STEP_SUMMARY
+          echo "2. Find \`footloose-frontend\`" >> $GITHUB_STEP_SUMMARY
+          echo "3. Package settings → Change visibility" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Image Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Date:** $(date -u +'%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **Git Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platforms:** linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
+          echo "- **Framework:** Next.js" >> $GITHUB_STEP_SUMMARY
+
+      - name: ❌ Build failure notification
+        if: failure()
+        run: |
+          echo "::error::Frontend Docker build failed"
+          echo "## Build Failed ❌" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The frontend Docker build process failed. Check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Common issues:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing permissions (ensure workflow has \`packages: write\`)" >> $GITHUB_STEP_SUMMARY
+          echo "- Dockerfile syntax errors" >> $GITHUB_STEP_SUMMARY
+          echo "- Missing build secrets (NEXT_PUBLIC_API_URL)" >> $GITHUB_STEP_SUMMARY
+          echo "- Network connectivity issues" >> $GITHUB_STEP_SUMMARY
+          echo "- Next.js build failures" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Debug steps:**" >> $GITHUB_STEP_SUMMARY
+          echo "1. Check workflow permissions in repository settings" >> $GITHUB_STEP_SUMMARY
+          echo "2. Verify Dockerfile syntax locally" >> $GITHUB_STEP_SUMMARY
+          echo "3. Ensure NEXT_PUBLIC_API_URL secret is set" >> $GITHUB_STEP_SUMMARY
+          echo "4. Test build locally: \`docker build -t test --target production .\`" >> $GITHUB_STEP_SUMMARY
+          echo "5. Re-run the workflow" >> $GITHUB_STEP_SUMMARY
+
+      - name: ✅ Success notification
+        if: success()
+        run: |
+          echo "::notice::Frontend Docker image built and pushed to GHCR successfully! 🎉"
+          echo "::notice::Image: ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest"
+          echo "::notice::Digest: ${{ steps.build.outputs.digest }}"
+          echo "::notice::View package: https://github.com/${{ github.repository_owner }}?tab=packages"
+          echo "📦 Image size:"
+          docker images ${{ env.REGISTRY }}/${{ steps.image.outputs.name }}:latest --format "{{.Size}}"
