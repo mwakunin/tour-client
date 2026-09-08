@@ -87,6 +87,42 @@ export const queryKeys = {
     stats: () => ["bookings", "stats"] as const,
     trends: () => ["bookings", "stats", "trends"] as const,
     revenue: () => ["bookings", "stats", "revenue"] as const,
+    pnl: (id: string | number) => ["bookings", "detail", String(id), "pnl"] as const,
+  },
+
+  /**
+   * The cost side. Each root is separate because the writes cross between
+   * them: paying a supplier changes their payables AND the unmatched list,
+   * so a mutation invalidates both roots rather than one shared prefix that
+   * would churn everything on every write.
+   */
+  counterparties: {
+    all: ["counterparties"] as const,
+    list: (filters?: unknown) => ["counterparties", "list", filters ?? null] as const,
+    detailById: (id: string) => ["counterparties", "detail", "id", id] as const,
+    payables: (id: string) => ["counterparties", "detail", "id", id, "payables"] as const,
+  },
+
+  supplierInvoices: {
+    all: ["supplierInvoices"] as const,
+    list: (filters?: unknown) => ["supplierInvoices", "list", filters ?? null] as const,
+    detailById: (id: string) => ["supplierInvoices", "detail", "id", id] as const,
+  },
+
+  fxRates: {
+    all: ["fxRates"] as const,
+    list: (filters?: unknown) => ["fxRates", "list", filters ?? null] as const,
+    resolved: (params?: unknown) => ["fxRates", "resolved", params ?? null] as const,
+  },
+
+  settlements: {
+    all: ["settlements"] as const,
+    unmatched: (filters?: unknown) => ["settlements", "unmatched", filters ?? null] as const,
+  },
+
+  ledgerOutbox: {
+    all: ["ledgerOutbox"] as const,
+    list: (filters?: unknown) => ["ledgerOutbox", "list", filters ?? null] as const,
   },
 
   users: {

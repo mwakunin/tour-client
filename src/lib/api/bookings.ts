@@ -1,4 +1,5 @@
 import { apiClient } from "./client";
+import type { BookingPnl } from "@/types/money";
 
 // ============================================
 // TYPES
@@ -111,5 +112,12 @@ export const bookingsApi = {
   getBookingTrends: async () => {
     const response = await apiClient.get<{ success: boolean; data: any }>("/bookings/stats/trends");
     return response.data.data;
+  },
+
+  /** What the trip made, in the operator's own currency — revenue less
+   *  supplier costs and agent commission. Admin only. */
+  getPnl: async (id: string) => {
+    const { data } = await apiClient.get(`/bookings/${id}/pnl`);
+    return data as { success: true; data: BookingPnl };
   },
 };
