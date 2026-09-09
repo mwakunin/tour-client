@@ -32,6 +32,10 @@ export default function SettlementsPage() {
   const [direction, setDirection] = useState<"" | "in" | "out">("");
   const [currentPage, setCurrentPage] = useState(1);
   const [matching, setMatching] = useState<UnmatchedSettlement | null>(null);
+  // Which candidate was clicked. matchMutation.isPending alone is true for the
+  // whole dialog, so passing it to every row span the spinner on all of them
+  // and the operator could not tell which one they had picked.
+  const [matchingObligationId, setMatchingObligationId] = useState<string | null>(null);
 
   const filters = {
     page: currentPage,
@@ -76,6 +80,7 @@ export default function SettlementsPage() {
     onSuccess: () => {
       success("Matched");
       setMatching(null);
+      setMatchingObligationId(null);
       // The settlement moved, the obligation moved, and what a counterparty is
       // owed moved with it. Three roots, because a write here touches all of
       // them and a stale payables view is the one somebody acts on next.
@@ -84,7 +89,10 @@ export default function SettlementsPage() {
       queryClient.invalidateQueries({ queryKey: queryKeys.counterparties.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.supplierInvoices.all });
     },
-    onError: (err: unknown) => error(messageFrom(err)),
+    onError: (err: unknown) => {
+      setMatchingObligationId(null);
+      error(messageFrom(err));
+    },
   });
 
   const rows = data?.data ?? [];
@@ -291,13 +299,18 @@ export default function SettlementsPage() {
                       </span>
                       <Button
                         size="sm"
-                        isLoading={matchMutation.isPending}
-                        onClick={() =>
+                        // Spinner on the one clicked; every other row simply
+                        // disabled, so a second match cannot be started while
+                        // the first is in flight.
+                        isLoading={matchingObligationId === candidate.id}
+                        disabled={matchMutation.isPending}
+                        onClick={() => {
+                          setMatchingObligationId(candidate.id);
                           matchMutation.mutate({
                             settlementId: matching.settlement_id,
                             obligationId: candidate.id,
-                          })
-                        }
+                          });
+                        }}
                       >
                         Match
                       </Button>
