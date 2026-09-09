@@ -103,7 +103,7 @@ export default function CounterpartiesPage() {
     ...(typeFilter ? { type: typeFilter as CounterpartyType } : {}),
   };
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
     queryKey: queryKeys.counterparties.list(filters),
     queryFn: () => counterpartiesApi.getAll(filters),
   });
@@ -246,6 +246,21 @@ export default function CounterpartiesPage() {
           <div className="py-12">
             <Loading />
           </div>
+        ) : isError ? (
+          // Not the empty state. A failed request left data undefined, the
+          // table received [], and it said "No suppliers or agents yet" — an
+          // operator being told they have no suppliers when the truth is that
+          // we could not ask. On a page about who is owed money, those two
+          // are not close enough to conflate.
+          <div className="space-y-3 py-12 text-center">
+            <p className="text-gray-900 dark:text-white">Could not load suppliers and agents.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              This is a failure to reach the server, not an empty list.
+            </p>
+            <Button variant="secondary" onClick={() => refetch()} isLoading={isFetching}>
+              Try again
+            </Button>
+          </div>
         ) : (
           <CounterpartiesTable
             counterparties={data?.data ?? []}
@@ -255,7 +270,7 @@ export default function CounterpartiesPage() {
         )}
       </Card>
 
-      {totalPages > 1 && (
+      {!isError && totalPages > 1 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-500 dark:text-gray-400">
             Page {currentPage} of {totalPages} — {total} total

@@ -79,6 +79,23 @@ const nextConfig: NextConfig = {
       throw new Error(`NEXT_PUBLIC_API_URL must use https for a non-local host. Got ${apiOrigin}.`);
     }
 
+    // Credentials in the URL. https://user:secret@api.example.com passes both
+    // the protocol check and the origin-shape one below -- pathname is "/" and
+    // the scheme is https -- and would then be inlined into the client bundle
+    // by API_ORIGIN, printed in the build log, and repeated in any error
+    // message here. Three places a password should never reach, one of which
+    // is served to every visitor.
+    //
+    // parsed.origin drops userinfo, so the suggestion below is safe to print
+    // even though the input was not.
+    if (parsed.username || parsed.password) {
+      throw new Error(
+        "NEXT_PUBLIC_API_URL must not contain a username or password: it is " +
+          "inlined into the client bundle and printed at build time. Use " +
+          `${parsed.origin} and authenticate with the session cookie.`
+      );
+    }
+
     // An ORIGIN, not a URL: scheme, host, optional port, nothing else.
     // "https://api.example.com/" and ".../v1" both parse fine and both pass a
     // protocol check — and every caller then concatenates, so `${origin}/api`
