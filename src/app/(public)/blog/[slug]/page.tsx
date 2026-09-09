@@ -3,6 +3,24 @@ import { Metadata } from "next";
 import { generateSEO } from "@/lib/utils/metadata";
 import BlogDetailClient from "./BlogDetailClient";
 
+/**
+ * Plain text from HTML, for a meta description.
+ *
+ * Repeated until it stops changing: a single pass over "<<b>b>" leaves "<b>",
+ * so one replace can hand back markup it was meant to remove. And the strip
+ * happens before the truncation, not after -- substring first could cut a tag
+ * in half and leave the opening bracket behind.
+ */
+const stripHtml = (html?: string | null): string => {
+  let out = html ?? "";
+  let previous: string;
+  do {
+    previous = out;
+    out = out.replace(/<[^>]*>/g, "");
+  } while (out !== previous);
+  return out.trim();
+};
+
 export async function generateMetadata({
   params,
 }: {
@@ -61,7 +79,7 @@ export async function generateMetadata({
       description:
         post.meta_description ||
         post.excerpt ||
-        post.content?.substring(0, 160).replace(/<[^>]*>/g, "") || // Strip HTML tags
+        stripHtml(post.content).substring(0, 160) ||
         "Read this article on our safari blog",
       image: post.featured_image || "/og-image.jpg",
       url: `https://www.footlooseadventures.co.ke/blog/${post.slug}`,

@@ -6,9 +6,28 @@ interface ImageLoaderProps {
   quality?: number;
 }
 
+/**
+ * The host of an absolute URL, or "" for anything that is not one.
+ *
+ * startsWith() is not a host check: "https://ik.imagekit.io.example.com/x"
+ * starts with "https://ik.imagekit.io" and is a different origin entirely, so
+ * the checks below were matching hosts they were never meant to serve. A
+ * relative src throws here and returns "", which falls through to the same
+ * passthrough it always did.
+ */
+const hostOf = (src: string): string => {
+  try {
+    return new URL(src).hostname;
+  } catch {
+    return "";
+  }
+};
+
 export default function imageKitLoader({ src, width, quality }: ImageLoaderProps): string {
+  const host = hostOf(src);
+
   // ✅ Handle ImageKit URLs (path-based transformations)
-  if (src.startsWith("https://ik.imagekit.io")) {
+  if (host === "ik.imagekit.io") {
     try {
       const url = new URL(src);
       const pathParts = url.pathname.split("/");
@@ -44,7 +63,7 @@ export default function imageKitLoader({ src, width, quality }: ImageLoaderProps
   }
 
   // ✅ Handle Unsplash images (query-based)
-  if (src.startsWith("https://images.unsplash.com")) {
+  if (host === "images.unsplash.com") {
     const url = new URL(src);
     url.searchParams.set("w", width.toString());
     url.searchParams.set("q", (quality || 75).toString());
