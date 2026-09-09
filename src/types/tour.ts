@@ -26,10 +26,15 @@ export interface Tour {
   itinerary: ItineraryDay[];
   destinations?: TourDestination[];
   pricing_periods: PricingPeriod[];
+  // Nullable, because a seasonal tour has no flat price: the API leaves
+  // price_amount and price_currency null and puts the money in
+  // pricing_periods. Declaring them non-null made every seasonal tour a lie
+  // the compiler could not see, and the pricing tests could not typecheck
+  // against the shape the API actually sends.
   pricing?: {
-    amount: number;
-    currency: string;
-    compare_at_amount?: number;
+    amount: number | null;
+    currency: string | null;
+    compare_at_amount?: number | null;
   };
   price_amount?: number | null;
   price_currency?: string | null;

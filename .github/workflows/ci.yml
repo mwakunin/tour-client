@@ -1,47 +1,52 @@
 name: CI
 
+# baseline as well as main. Feature branches are opened against baseline so
+# their diff is the work rather than the whole fork, and a workflow watching
+# only main would never run on any of them — which is why this PR arrived
+# with no checks at all.
 on:
   push:
-    branches: [main, master, develop]
+    branches: [main, baseline]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, baseline]
 
 jobs:
   quality-checks:
     name: Code Quality & Tests
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js ${{ matrix.node-version }}
+      # pnpm, not npm. There is no package-lock.json in this repo -- only
+      # pnpm-lock.yaml -- so `npm ci` fails before installing anything, and
+      # every step below it has been unrunnable since the fork.
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'npm'
+          node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Run ESLint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Check code formatting
-        run: npm run format:check
+        run: pnpm run format:check
 
       - name: Run TypeScript type check
-        run: npm run type-check
+        run: pnpm run type-check
 
       - name: Run tests
-        run: npm test -- --coverage
+        run: pnpm test -- --coverage
 
       - name: Upload coverage to Codecov
-        if: matrix.node-version == '20.x'
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -59,17 +64,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20.x'
-          cache: 'npm'
+          node-version: '22'
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build application
-        run: npm run build
+        run: pnpm run build
         env:
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
           NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}

@@ -133,15 +133,17 @@ describe("resolveTierForGroupSize", () => {
 
 describe("getDisplayCurrency", () => {
   it("should use the flat currency for flat-priced tours", () => {
-    expect(getDisplayCurrency({ pricing: { currency: "KES" }, pricing_periods: [] })).toBe("KES");
+    expect(
+      getDisplayCurrency({ pricing: { amount: null, currency: "KES" }, pricing_periods: [] })
+    ).toBe("KES");
   });
 
   it("should fall back to the tier currency for period-only tours", () => {
     // A seasonal tour has a null flat currency; without this fallback a USD
     // tour would render with the KSh symbol
-    expect(getDisplayCurrency({ pricing: { currency: null }, pricing_periods: periods })).toBe(
-      "USD"
-    );
+    expect(
+      getDisplayCurrency({ pricing: { amount: null, currency: null }, pricing_periods: periods })
+    ).toBe("USD");
   });
 });
 

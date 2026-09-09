@@ -201,8 +201,19 @@ export const getLowestTier = (period: PricingPeriod | null | undefined): Pricing
   return tiers.reduce((min, tier) => (tier.price_per_person < min.price_per_person ? tier : min));
 };
 
+/**
+ * What the pricing helpers actually read.
+ *
+ * They touch three fields. Demanding a whole Tour meant every caller and every
+ * test fixture had to invent an id, a slug, an itinerary and eight other
+ * fields that have nothing to do with what a tour costs — which is why the
+ * pricing tests could not typecheck at all. A structural type still accepts a
+ * full Tour, so no caller changes.
+ */
+type PricedTour = Pick<Tour, "pricing" | "pricing_periods"> & Partial<Pick<Tour, "price_currency">>;
+
 /** The currency a tour displays in — falls back to the tiers when the flat column is null. */
-export const getDisplayCurrency = (tour: Tour): string => {
+export const getDisplayCurrency = (tour: PricedTour): string => {
   if (tour?.pricing?.currency) return tour.pricing.currency;
   if (tour?.price_currency) return tour.price_currency;
 
@@ -257,7 +268,7 @@ export interface CardPricing {
  * The strikethrough belongs to the quoted price; the badge reflects the best
  * offer in the season, so the two can legitimately differ.
  */
-export const getCardPricing = (tour: Tour): CardPricing => {
+export const getCardPricing = (tour: PricedTour): CardPricing => {
   const currency = getDisplayCurrency(tour);
   const periods: PricingPeriod[] = Array.isArray(tour?.pricing_periods) ? tour.pricing_periods : [];
 
