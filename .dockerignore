@@ -4,7 +4,7 @@ node_modules/
 .pnpm-store
 
 # Next.js build output
-.next/S
+.next/
 out/
 dist/
 

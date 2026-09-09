@@ -1,4 +1,7 @@
-name: footloose-client
+# Explicit, and tourops-scoped: this is a second `client` folder alongside
+# footloose/client, and without a name Compose calls the project after the
+# directory and the two stacks share volumes and networks.
+name: tourops-client-prod
 
 services:
   # Next.js Frontend
@@ -6,7 +9,15 @@ services:
     build:
       context: .
       target: production
-    container_name: footloose-frontend-prod
+      # Build-time, not runtime. next.config.ts reads API_URL when it builds
+      # the /api/* rewrite and Next bakes the destination into the image, so a
+      # value supplied at `docker run` arrives far too late. Same for the
+      # NEXT_PUBLIC_* values, which are inlined into the client bundle.
+      args:
+        API_URL: ${API_URL:?set API_URL, e.g. https://api.example.com}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+    container_name: tourops-frontend-prod
     ports:
       - "3001:3001"
     environment:
@@ -27,5 +38,9 @@ services:
 
 networks:
   default:
-    name: footloose-api_footloose-network
+    # The network the API's prod stack creates. It was
+    # footloose-api_footloose-network until the API renamed its compose
+    # project and network to tourops-*; this pointed at a network that no
+    # longer exists, so the frontend container would fail to start.
+    name: tourops-api-prod_tourops-network
     external: true

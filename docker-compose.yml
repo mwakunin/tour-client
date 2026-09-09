@@ -13,8 +13,12 @@ services:
       - NODE_ENV=development
       - PORT=3001
       - NEXT_PUBLIC_API_URL=http://localhost:3000
+    # Optional: .env.local is untracked and the README tells developers to
+    # create it themselves, so a fresh clone had `docker compose up` fail
+    # before the container started. Needs Compose 2.24 or newer.
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
     volumes:
       - .:/app
       - /app/node_modules
