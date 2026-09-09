@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { API_ORIGIN } from "@/lib/api/origin";
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -19,7 +20,7 @@ export default function ChatWidget() {
   // Absolute, at the API's origin. This was relative because the /api/*
   // rewrite made it same-origin; with the rewrite gone a relative path posts
   // to the Next server, which has no /api/chat route.
-  const WEBHOOK_URL = `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/chat`;
+  const WEBHOOK_URL = `${API_ORIGIN}/api/chat`;
 
   const sendMessage = async (message?: string) => {
     const messageToSend = message || inputValue.trim();

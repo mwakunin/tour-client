@@ -79,6 +79,29 @@ const nextConfig: NextConfig = {
       throw new Error(`NEXT_PUBLIC_API_URL must use https for a non-local host. Got ${apiOrigin}.`);
     }
 
+    // An ORIGIN, not a URL: scheme, host, optional port, nothing else.
+    // "https://api.example.com/" and ".../v1" both parse fine and both pass a
+    // protocol check — and every caller then concatenates, so `${origin}/api`
+    // becomes "https://api.example.com//api", which many routers treat as a
+    // different path and answer 404. The value is baked into the bundle, so
+    // that ships in the image. Refused here, where the build already stops on
+    // a bad value.
+    if (parsed.pathname !== "/" || parsed.search || parsed.hash) {
+      throw new Error(
+        `NEXT_PUBLIC_API_URL must be an origin with no path, query or fragment. ` +
+          `Got ${apiOrigin} — try ${parsed.origin}.`
+      );
+    }
+
+    if (apiOrigin.endsWith("/")) {
+      throw new Error(
+        `NEXT_PUBLIC_API_URL must not end in a slash: callers append "/api" to it. ` +
+          `Got ${apiOrigin} — try ${parsed.origin}.`
+      );
+    }
+
+    // The same literal as src/lib/api/origin.ts, which is what the bundle
+    // actually uses. They were different once, and this log said so wrongly.
     console.log(`🔧 [Next.js] Browser will call the API at ${apiOrigin}`);
     return {};
   })(),

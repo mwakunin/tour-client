@@ -187,6 +187,15 @@ export default function CounterpartiesPage() {
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
+  // Removing the last row on a page leaves currentPage past the end, and the
+  // refetch then returns nothing — an empty table with the pagination controls
+  // gone, so no way back. Clamped once the refreshed count has arrived, never
+  // while it is still loading, or a slow first response would knock the page
+  // back to 1 under the reader.
+  useEffect(() => {
+    if (!isLoading && currentPage > totalPages) setCurrentPage(totalPages);
+  }, [isLoading, currentPage, totalPages]);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">

@@ -1,5 +1,7 @@
 import { createAuthClient } from "better-auth/react";
 
+import { API_ORIGIN } from "./api/origin";
+
 // The API's own origin. better-auth appends /api/auth, which is where the
 // server mounts it.
 //
@@ -14,7 +16,7 @@ import { createAuthClient } from "better-auth/react";
 // Do NOT also set NEXT_PUBLIC_BETTER_AUTH_URL or NEXT_PUBLIC_AUTH_URL --
 // better-auth reads those and they would override this silently.
 export const authClient = createAuthClient({
-  baseURL: process.env.NEXT_PUBLIC_API_URL ?? "",
+  baseURL: API_ORIGIN,
 });
 
 export type AuthUser = typeof authClient.$Infer.Session.user & {

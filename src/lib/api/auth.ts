@@ -1,5 +1,6 @@
 // src/lib/api/auth.ts
 import { authClient } from "@/lib/auth-client";
+import { API_ORIGIN } from "./origin";
 
 /**
  * The origin better-auth should send the browser back to after an OAuth round
@@ -16,13 +17,6 @@ import { authClient } from "@/lib/auth-client";
  */
 const appOrigin = () =>
   typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "");
-
-/**
- * Where the API lives. A different origin to appOrigin() now that the browser
- * calls it directly rather than through a rewrite — the two were the same
- * value while the proxy existed, which is why this did not need to exist.
- */
-const apiOrigin = () => process.env.NEXT_PUBLIC_API_URL ?? "";
 
 export const authApi = {
   login: (callbackURL: string = `${appOrigin()}/`) =>
@@ -43,7 +37,7 @@ export const authApi = {
     // Encoded: a userId carrying a slash would otherwise change which path
     // this posts to.
     const response = await fetch(
-      `${apiOrigin()}/api/auth/force-logout/${encodeURIComponent(userId)}`,
+      `${API_ORIGIN}/api/auth/force-logout/${encodeURIComponent(userId)}`,
       {
         method: "POST",
         credentials: "include",

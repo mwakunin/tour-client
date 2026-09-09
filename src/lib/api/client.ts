@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import { API_ORIGIN } from "./origin";
+
 // Absolute, at the API's own origin. There is no /api/* rewrite any more: the
 // browser calls api.example.com from app.example.com directly.
 //
@@ -12,10 +14,8 @@ import axios from "axios";
 // Read at build time, not request time: NEXT_PUBLIC_* is inlined into the
 // bundle, so changing it needs a rebuild. next.config.ts validates it there.
 // Browser-only — no server component imports this (see the note in sitemap.ts).
-const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? "";
-
 export const apiClient = axios.create({
-  baseURL: `${apiOrigin}/api`,
+  baseURL: `${API_ORIGIN}/api`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
