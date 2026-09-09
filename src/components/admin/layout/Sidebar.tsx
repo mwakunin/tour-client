@@ -15,6 +15,7 @@ import {
   X,
   Banknote,
   Truck,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -34,6 +35,7 @@ const navigation = [
   // The cost side. One entry, because one page exists — the previous attempt
   // added all five ahead of their pages and every one of them 404'd.
   { name: "Suppliers & Agents", href: "/admin/counterparties", icon: Truck },
+  { name: "Supplier Invoices", href: "/admin/supplier-invoices", icon: FileText },
   { name: "Media", href: "/admin/media", icon: Image },
   { name: "Blog", href: "/admin/blog", icon: Image },
   { name: "Blog Categories", href: "/admin/blog/categories", icon: Image },

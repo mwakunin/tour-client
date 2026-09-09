@@ -1,6 +1,7 @@
 "use client";
 
-import { Edit, Trash2, Mail, Phone } from "lucide-react";
+import Link from "next/link";
+import { Edit, Trash2, Mail, Phone, Receipt } from "lucide-react";
 import Button from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils/format";
@@ -92,6 +93,19 @@ export default function CounterpartiesTable({
               </td>
               <td className="px-4 py-3">
                 <div className="flex justify-end gap-2">
+                  {/* Only where money can be owed. A customer is billed, not
+                      paid, so a payables view of one would always be empty. */}
+                  {(counterparty.type === "supplier" || counterparty.type === "agent") && (
+                    <Link href={`/admin/counterparties/${counterparty.id}/payables`}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Payables for ${counterparty.name}`}
+                      >
+                        <Receipt size={16} />
+                      </Button>
+                    </Link>
+                  )}
                   <Button
                     variant="ghost"
                     size="sm"
