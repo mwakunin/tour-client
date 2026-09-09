@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Trash2 } from "lucide-react";
 
@@ -83,6 +83,15 @@ export default function FxRatesPage() {
   const rows = data?.data ?? [];
   const total = data?.total ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+
+  // Deleting the last rows on a page leaves currentPage past the end: the
+  // table says "No rates loaded" and the pagination controls hide themselves,
+  // because they only render when totalPages > 1 — so there is no way back to
+  // page 1. Counterparties and supplier invoices already had this; fx-rates
+  // did not, which is the same fix missing from the third of three pages.
+  useEffect(() => {
+    if (!isLoading && currentPage > totalPages) setCurrentPage(totalPages);
+  }, [isLoading, currentPage, totalPages]);
 
   const sameCurrency = form.base_currency === form.quote_currency;
 
@@ -175,6 +184,19 @@ export default function FxRatesPage() {
                             isLoading={deletingId === rate.id}
                             disabled={deleteMutation.isPending}
                             onClick={() => {
+                              // Removing the only rate for a pair makes every
+                              // later conversion fail — toBaseCents refuses
+                              // rather than inventing one — so an unsettled
+                              // USD invoice stops being recordable. Cheap to
+                              // click, expensive to undo.
+                              if (
+                                !confirm(
+                                  `Remove the ${rate.base_currency} to ${rate.quote_currency} rate of ${rate.rate}, as of ${rate.as_of}?\n\n` +
+                                    "If nothing else covers this pair, conversions will fail until another rate is added."
+                                )
+                              ) {
+                                return;
+                              }
                               setDeletingId(rate.id);
                               deleteMutation.mutate(rate.id);
                             }}

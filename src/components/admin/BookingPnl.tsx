@@ -20,9 +20,16 @@ export default function BookingPnl({ bookingId }: { bookingId: string }) {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: queryKeys.bookings.pnl(bookingId),
     queryFn: () => bookingsApi.getPnl(bookingId),
-    // A booking with nothing accrued against it answers 404, which is an
-    // answer rather than a fault — no point retrying it.
-    retry: false,
+    // A booking with nothing accrued answers 404, which is an answer rather
+    // than a fault, so retrying it just delays the message. But `retry: false`
+    // said that about every failure — a transient 5xx or a dropped connection
+    // gave up instantly too. Client errors are final; anything else gets two
+    // more goes.
+    retry: (failureCount, err) => {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status !== undefined && status >= 400 && status < 500) return false;
+      return failureCount < 2;
+    },
   });
 
   if (isLoading) {
