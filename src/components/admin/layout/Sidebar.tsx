@@ -14,11 +14,6 @@ import {
   Users,
   X,
   Banknote,
-  Truck,
-  FileText,
-  Wallet,
-  Inbox,
-  ArrowLeftRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -34,15 +29,6 @@ const navigation = [
   { name: "Bookings", href: "/admin/bookings", icon: Calendar },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "payments", href: "/admin/payments", icon: Banknote },
-
-  // The cost side. Ordered the way the work runs: who you buy from, what they
-  // invoiced, what you owe them, then the two worklists for money and accruals
-  // that did not land where they should have.
-  { name: "Suppliers & Agents", href: "/admin/counterparties", icon: Truck },
-  { name: "Supplier Invoices", href: "/admin/supplier-invoices", icon: FileText },
-  { name: "Unmatched Receipts", href: "/admin/settlements", icon: ArrowLeftRight },
-  { name: "Ledger Outbox", href: "/admin/ledger-outbox", icon: Inbox },
-  { name: "FX Rates", href: "/admin/fx-rates", icon: Wallet },
   { name: "Media", href: "/admin/media", icon: Image },
   { name: "Blog", href: "/admin/blog", icon: Image },
   { name: "Blog Categories", href: "/admin/blog/categories", icon: Image },

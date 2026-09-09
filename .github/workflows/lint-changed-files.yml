@@ -51,12 +51,12 @@ jobs:
       - name: Run ESLint on changed files
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
-          pnpm dlx eslint ${{ steps.changed-files.outputs.all_changed_files }}
+          pnpm exec eslint ${{ steps.changed-files.outputs.all_changed_files }}
 
       - name: Run Prettier check on changed files
         if: steps.changed-files.outputs.any_changed == 'true'
         run: |
-          pnpm dlx prettier --check ${{ steps.changed-files.outputs.all_changed_files }}
+          pnpm exec prettier --check ${{ steps.changed-files.outputs.all_changed_files }}
 
       - name: TypeScript check
         run: pnpm run type-check
