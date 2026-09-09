@@ -1,5 +1,13 @@
 name: PR Checks
 
+# These jobs post their results as PR comments, which the default token cannot
+# do without this: the checks themselves pass and the run then dies on the
+# comment step with "Resource not accessible by integration". The API repo hit
+# the same wall and fixed it the same way.
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
