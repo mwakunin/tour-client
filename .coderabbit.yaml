@@ -1,0 +1,56 @@
+# CodeRabbit configuration.
+#
+# The free plan reviews at most 100 files per PR, and CodeRabbit reads this
+# file from the *feature branch under review* — so there is no per-PR
+# override. It is tuned for whichever review is in flight, the same way
+# tour-api's is.
+#
+# WHY THIS EXISTS AT ALL
+#
+# main is an empty commit and the whole application arrives on one branch, so
+# the first PR is 241 files against a 100-file cap. Nearly all of it is
+# inherited footloose-client code that is already running in production and is
+# not what anybody is reviewing. Excluding it brings the review down to the 73
+# files this branch actually touches, plus the surfaces its work lives in.
+#
+# CURRENTLY TUNED FOR: PR #1 (feat/cost-side-admin) — the money-layer API
+# client, the CI conversion to pnpm, and the pricing type fixes. 73 files.
+#
+# WHEN THE NEXT PHASE LANDS, CHANGE THIS. The admin pages are excluded below
+# because this PR does not add any; Phase 1 onwards puts every new page under
+# src/app/(admin) and src/components/admin, and shipping those unreviewed
+# because a config was left pointing at the previous PR would be worse than
+# having no config. Re-include them and drop something else — a later PR is a
+# handful of files, so there will be room.
+#
+# What is excluded, and why:
+#
+#   public/**              static assets — images and icons, nothing to read
+#   src/app/(public)/**    the inherited marketing site: unchanged here, and
+#   src/components/public/ live in production at footloose already
+#   src/components/ui/**   shadcn primitives, generated rather than written
+#   src/app/auth/**        inherited auth pages, untouched by this work
+#   src/app/(admin)/**     inherited admin pages — SEE THE NOTE ABOVE
+#   src/components/admin/  same, except the one nav file this PR edits
+#   **/__tests__/**        large, and re-including them puts this over the cap
+#   *.md                   prose
+#   pnpm-lock.yaml         machine-generated
+
+reviews:
+  path_filters:
+    - "!public/**"
+    - "!**/*.md"
+    - "!pnpm-lock.yaml"
+    - "!**/__tests__/**"
+    - "!**/*.test.*"
+    - "!**/*.spec.*"
+    - "!src/components/ui/**"
+    - "!src/app/(public)/**"
+    - "!src/components/public/**"
+    - "!src/app/auth/**"
+    - "!src/components/auth/**"
+    # Inherited admin surface. Re-include when a PR actually changes it —
+    # which Phase 1 will.
+    - "!src/app/(admin)/**"
+    - "!src/components/admin/**"
+    - "src/components/admin/layout/Sidebar.tsx"
