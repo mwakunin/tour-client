@@ -16,6 +16,8 @@ import {
   Banknote,
   Truck,
   FileText,
+  ArrowLeftRight,
+  Inbox,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -36,6 +38,10 @@ const navigation = [
   // added all five ahead of their pages and every one of them 404'd.
   { name: "Suppliers & Agents", href: "/admin/counterparties", icon: Truck },
   { name: "Supplier Invoices", href: "/admin/supplier-invoices", icon: FileText },
+  // The two worklists. Money that landed with no home, and accruals that never
+  // landed at all.
+  { name: "Unmatched Receipts", href: "/admin/settlements", icon: ArrowLeftRight },
+  { name: "Ledger Outbox", href: "/admin/ledger-outbox", icon: Inbox },
   { name: "Media", href: "/admin/media", icon: Image },
   { name: "Blog", href: "/admin/blog", icon: Image },
   { name: "Blog Categories", href: "/admin/blog/categories", icon: Image },
