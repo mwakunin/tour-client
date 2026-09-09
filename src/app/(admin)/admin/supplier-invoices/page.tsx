@@ -8,6 +8,7 @@ import { supplierInvoicesApi, type SupplierInvoiceInput } from "@/lib/api/suppli
 import { counterpartiesApi } from "@/lib/api/counterparties";
 import { queryKeys } from "@/lib/api/queryKeys";
 import type { Currency } from "@/types/money";
+import { todayLocal } from "@/lib/utils/format";
 import SupplierInvoicesTable from "@/components/admin/tables/SupplierInvoicesTable";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
@@ -26,15 +27,17 @@ const STATUS_OPTIONS = [
   { value: "void", label: "Void" },
 ];
 
-const EMPTY_FORM = {
+// A function, not a constant: the date has to be recomputed when the form
+// is opened or reset, or a tab left open overnight seeds yesterday.
+const emptyForm = () => ({
   counterparty_id: "",
   invoice_number: "",
-  issued_on: new Date().toISOString().slice(0, 10),
+  issued_on: todayLocal(),
   amount: "",
   currency: "USD" as Currency,
   due_on: "",
   notes: "",
-};
+});
 
 export default function SupplierInvoicesPage() {
   const { success, error } = useToast();
@@ -46,7 +49,7 @@ export default function SupplierInvoicesPage() {
   const [status, setStatus] = useState<"all" | "open" | "settled" | "void">("open");
   const [currentPage, setCurrentPage] = useState(1);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState(EMPTY_FORM);
+  const [form, setForm] = useState(emptyForm);
 
   const filters = { page: currentPage, limit: ITEMS_PER_PAGE, status };
 
@@ -57,7 +60,12 @@ export default function SupplierInvoicesPage() {
 
   // Only the suppliers, and only the active ones — an invoice from a
   // deactivated supplier is not something to offer creating.
-  const { data: suppliers } = useQuery({
+  const {
+    data: suppliers,
+    isLoading: suppliersLoading,
+    isError: suppliersError,
+    refetch: refetchSuppliers,
+  } = useQuery({
     queryKey: queryKeys.counterparties.list({ type: "supplier", is_active: true }),
     queryFn: () => counterpartiesApi.getAll({ type: "supplier", is_active: true, limit: 100 }),
   });
@@ -81,7 +89,7 @@ export default function SupplierInvoicesPage() {
     onSuccess: () => {
       success("Invoice recorded");
       setDialogOpen(false);
-      setForm(EMPTY_FORM);
+      setForm(emptyForm());
       invalidate();
     },
     onError: (err: unknown) => error(messageFrom(err)),
@@ -128,17 +136,36 @@ export default function SupplierInvoicesPage() {
             What suppliers have billed, and what is still outstanding on each.
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} disabled={supplierOptions.length === 0}>
+        <Button
+          onClick={() => {
+            setForm(emptyForm());
+            setDialogOpen(true);
+          }}
+          disabled={supplierOptions.length === 0 || suppliersLoading}
+        >
           <Plus size={16} className="mr-2" />
           Record invoice
         </Button>
       </div>
 
-      {supplierOptions.length === 0 && (
+      {/* Three states, not one. A pending or failed supplier query also leaves
+          supplierOptions empty, and saying "no active suppliers yet" then tells
+          the operator to create one they may already have. */}
+      {suppliersError ? (
+        <Card className="flex items-center justify-between gap-4 p-4 text-sm">
+          <span className="text-gray-900 dark:text-white">
+            Could not load the supplier list, so an invoice cannot be recorded yet. This is a
+            failure to reach the server, not an empty list.
+          </span>
+          <Button variant="secondary" onClick={() => refetchSuppliers()}>
+            Try again
+          </Button>
+        </Card>
+      ) : !suppliersLoading && supplierOptions.length === 0 ? (
         <Card className="p-4 text-sm text-gray-600 dark:text-gray-300">
           No active suppliers yet — an invoice has to belong to one. Add a supplier first.
         </Card>
-      )}
+      ) : null}
 
       <Card className="p-4">
         <Select

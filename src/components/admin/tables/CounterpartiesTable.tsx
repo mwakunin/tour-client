@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { Edit, Trash2, Mail, Phone, Receipt } from "lucide-react";
-import Button from "@/components/ui/button";
+import Button, { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "@/lib/utils/format";
 import type { Counterparty } from "@/types/money";
@@ -96,14 +96,17 @@ export default function CounterpartiesTable({
                   {/* Only where money can be owed. A customer is billed, not
                       paid, so a payables view of one would always be empty. */}
                   {(counterparty.type === "supplier" || counterparty.type === "agent") && (
-                    <Link href={`/admin/counterparties/${counterparty.id}/payables`}>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        aria-label={`Payables for ${counterparty.name}`}
-                      >
-                        <Receipt size={16} />
-                      </Button>
+                    // A Link wearing the button's styles, rather than a Button
+                    // inside a Link. Button renders a native <button> and has
+                    // no asChild, so nesting them produced <a><button>, which
+                    // is invalid and behaves inconsistently for keyboard and
+                    // screen-reader users.
+                    <Link
+                      href={`/admin/counterparties/${counterparty.id}/payables`}
+                      aria-label={`Payables for ${counterparty.name}`}
+                      className={buttonVariants({ variant: "ghost", size: "sm" })}
+                    >
+                      <Receipt size={16} />
                     </Link>
                   )}
                   <Button

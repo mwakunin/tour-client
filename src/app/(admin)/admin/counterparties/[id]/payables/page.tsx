@@ -8,7 +8,7 @@ import { ArrowLeft, Banknote } from "lucide-react";
 import { counterpartiesApi, type PayCounterpartyInput } from "@/lib/api/counterparties";
 import { queryKeys } from "@/lib/api/queryKeys";
 import type { Currency, PaymentMethod } from "@/types/money";
-import { formatDate } from "@/lib/utils/format";
+import { formatDate, todayLocal } from "@/lib/utils/format";
 import Button from "@/components/ui/button";
 import Input from "@/components/ui/input";
 import Card from "@/components/ui/card";
@@ -32,13 +32,17 @@ export default function PayablesPage({ params }: { params: Promise<{ id: string 
   const queryClient = useQueryClient();
 
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({
+
+  // A function, so the date is recomputed each time rather than frozen at
+  // first render — and so a successful payment can clear the form.
+  const emptyForm = () => ({
     amount: "",
     method: "bank_transfer" as PaymentMethod,
-    occurred_on: new Date().toISOString().slice(0, 10),
+    occurred_on: todayLocal(),
     reference: "",
     notes: "",
   });
+  const [form, setForm] = useState(emptyForm);
 
   const { data: counterparty } = useQuery({
     queryKey: queryKeys.counterparties.detailById(id),
@@ -71,6 +75,9 @@ export default function PayablesPage({ params }: { params: Promise<{ id: string 
           : "Payment recorded and allocated in full"
       );
       setDialogOpen(false);
+      // Cleared, or reopening the dialog offers the amount and reference of
+      // the payment just made — and submitting again would send them.
+      setForm(emptyForm());
       queryClient.invalidateQueries({ queryKey: queryKeys.counterparties.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.supplierInvoices.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.settlements.all });
@@ -97,7 +104,13 @@ export default function PayablesPage({ params }: { params: Promise<{ id: string 
             What is still owed, oldest due first — the order a payment clears them in.
           </p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} disabled={outstandingCents === 0}>
+        <Button
+          onClick={() => {
+            setForm(emptyForm());
+            setDialogOpen(true);
+          }}
+          disabled={outstandingCents === 0}
+        >
           <Banknote size={16} className="mr-2" />
           Record payment
         </Button>
