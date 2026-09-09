@@ -1,0 +1,31 @@
+name: footloose-client
+
+services:
+  # Next.js Frontend
+  frontend:
+    build:
+      context: .
+      target: production
+    container_name: footloose-frontend-prod
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    env_file:
+      - .env.production
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "1"
+          memory: 1G
+        reservations:
+          cpus: "0.5"
+          memory: 512M
+
+networks:
+  default:
+    name: footloose-api_footloose-network
+    external: true

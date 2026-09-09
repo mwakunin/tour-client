@@ -1,0 +1,57 @@
+# Dependencies — always reinstalled in container
+node_modules/
+.npm
+.pnpm-store
+
+# Next.js build output
+.next/S
+out/
+dist/
+
+# Testing
+coverage/
+.nyc_output/
+__tests__/
+
+# Environment files
+.env
+.env.local
+.env*.local
+.env.production
+.dev.vars
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Misc
+README.md
+LICENSE
+.vercel/
+.wrangler/
+*.tsbuildinfo
+
+# Lockfiles for other package managers
+package-lock.json
+yarn.lock

@@ -1,0 +1,62 @@
+name: Lint Changed Files
+
+# These jobs post their results as PR comments, which the default token cannot
+# do without this: the checks themselves pass and the run then dies on the
+# comment step with "Resource not accessible by integration". The API repo hit
+# the same wall and fixed it the same way.
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  lint-changed:
+    name: Lint Changed Files Only
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            src/**/*.{ts,tsx,js,jsx}
+
+      - name: List changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          echo "Changed files:"
+          echo "${{ steps.changed-files.outputs.all_changed_files }}"
+
+      - name: Run ESLint on changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          pnpm exec eslint ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: Run Prettier check on changed files
+        if: steps.changed-files.outputs.any_changed == 'true'
+        run: |
+          pnpm exec prettier --check ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: TypeScript check
+        run: pnpm run type-check

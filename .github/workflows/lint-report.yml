@@ -1,0 +1,126 @@
+name: Lint Report
+
+# These jobs post their results as PR comments, which the default token cannot
+# do without this: the checks themselves pass and the run then dies on the
+# comment step with "Resource not accessible by integration". The API repo hit
+# the same wall and fixed it the same way.
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  eslint:
+    name: ESLint Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        id: eslint
+        run: |
+          pnpm run lint > eslint-output.txt 2>&1 || true
+          cat eslint-output.txt
+
+      - name: Create ESLint report
+        run: |
+          echo "## 🔍 ESLint Report" > eslint-report.md
+          echo "" >> eslint-report.md
+
+          if grep -q "warning\|error" eslint-output.txt; then
+            echo "### Issues Found" >> eslint-report.md
+            echo "" >> eslint-report.md
+            echo '```' >> eslint-report.md
+            cat eslint-output.txt >> eslint-report.md
+            echo '```' >> eslint-report.md
+          else
+            echo "✅ No linting issues found!" >> eslint-report.md
+          fi
+
+      - name: Comment ESLint results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('eslint-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
+
+  prettier:
+    name: Prettier Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prettier check
+        id: prettier
+        run: |
+          pnpm run format:check > prettier-output.txt 2>&1 || true
+          cat prettier-output.txt
+
+      - name: Create Prettier report
+        run: |
+          echo "## 💅 Prettier Check" > prettier-report.md
+          echo "" >> prettier-report.md
+
+          if grep -q "Code style issues found" prettier-output.txt; then
+            echo "### Formatting Issues Found" >> prettier-report.md
+            echo "" >> prettier-report.md
+            echo "Run \`pnpm run format\` to fix formatting issues automatically." >> prettier-report.md
+            echo "" >> prettier-report.md
+            echo '```' >> prettier-report.md
+            cat prettier-output.txt >> prettier-report.md
+            echo '```' >> prettier-report.md
+          else
+            echo "✅ All files are properly formatted!" >> prettier-report.md
+          fi
+
+      - name: Comment Prettier results
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('prettier-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

@@ -1,0 +1,175 @@
+name: PR Checks
+
+# These jobs post their results as PR comments, which the default token cannot
+# do without this: the checks themselves pass and the run then dies on the
+# comment step with "Resource not accessible by integration". The API repo hit
+# the same wall and fixed it the same way.
+permissions:
+  contents: read
+  pull-requests: write
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  pr-info:
+    name: PR Information
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR stats
+        id: pr-stats
+        run: |
+          # Count changed files
+          FILES_CHANGED=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | wc -l)
+
+          # Count lines changed
+          LINES_ADDED=$(git diff --numstat ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | awk '{sum+=$1} END {print sum}')
+          LINES_REMOVED=$(git diff --numstat ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | awk '{sum+=$2} END {print sum}')
+
+          echo "files_changed=$FILES_CHANGED" >> $GITHUB_OUTPUT
+          echo "lines_added=$LINES_ADDED" >> $GITHUB_OUTPUT
+          echo "lines_removed=$LINES_REMOVED" >> $GITHUB_OUTPUT
+
+      - name: Comment PR stats
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const filesChanged = '${{ steps.pr-stats.outputs.files_changed }}';
+            const linesAdded = '${{ steps.pr-stats.outputs.lines_added }}';
+            const linesRemoved = '${{ steps.pr-stats.outputs.lines_removed }}';
+
+            const comment = `## 📊 PR Statistics
+
+            - **Files changed:** ${filesChanged}
+            - **Lines added:** ➕ ${linesAdded}
+            - **Lines removed:** ➖ ${linesRemoved}
+
+            Thanks for your contribution! 🎉`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  test-coverage:
+    name: Test Coverage Report
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
+
+      - name: Comment test coverage
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read coverage summary
+            let coverageComment = '## 🧪 Test Coverage\n\n';
+
+            try {
+              const coverage = JSON.parse(fs.readFileSync('./coverage/coverage-summary.json', 'utf8'));
+              const total = coverage.total;
+
+              coverageComment += '| Metric | Coverage |\n';
+              coverageComment += '|--------|----------|\n';
+              coverageComment += `| Statements | ${total.statements.pct}% |\n`;
+              coverageComment += `| Branches | ${total.branches.pct}% |\n`;
+              coverageComment += `| Functions | ${total.functions.pct}% |\n`;
+              coverageComment += `| Lines | ${total.lines.pct}% |\n`;
+            } catch (error) {
+              coverageComment += '⚠️ Coverage report not available\n';
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: coverageComment
+            });
+
+  size-check:
+    name: Bundle Size Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build for production
+        run: pnpm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://api.example.com
+
+      - name: Analyze bundle size
+        run: |
+          echo "## 📦 Bundle Size Report" > size-report.md
+          echo "" >> size-report.md
+
+          if [ -d ".next" ]; then
+            echo "### Build completed successfully!" >> size-report.md
+            echo "" >> size-report.md
+
+            # Get .next directory size
+            NEXT_SIZE=$(du -sh .next | cut -f1)
+            echo "- **.next directory size:** $NEXT_SIZE" >> size-report.md
+
+            # Get static files size if exists
+            if [ -d ".next/static" ]; then
+              STATIC_SIZE=$(du -sh .next/static | cut -f1)
+              echo "- **Static files:** $STATIC_SIZE" >> size-report.md
+            fi
+          else
+            echo "⚠️ Build directory not found" >> size-report.md
+          fi
+
+      - name: Comment bundle size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('size-report.md', 'utf8');
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });
