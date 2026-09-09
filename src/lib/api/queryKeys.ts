@@ -115,6 +115,11 @@ export const queryKeys = {
     resolved: (params?: unknown) => ["fxRates", "resolved", params ?? null] as const,
   },
 
+  obligations: {
+    all: ["obligations"] as const,
+    open: (filters?: unknown) => ["obligations", "open", filters ?? null] as const,
+  },
+
   settlements: {
     all: ["settlements"] as const,
     unmatched: (filters?: unknown) => ["settlements", "unmatched", filters ?? null] as const,

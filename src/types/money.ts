@@ -145,3 +145,22 @@ export interface BookingPnl {
   /** Null rather than zero when there is no revenue to take a percentage of. */
   margin_pct: number | null;
 }
+
+/** An open obligation with something still owed — a candidate a settlement could clear. */
+export interface OpenObligation {
+  id: string;
+  direction: "receivable" | "payable";
+  kind: string;
+  status: ObligationStatus;
+  source_type: string | null;
+  source_id: string | null;
+  description: string | null;
+  due_on: string | null;
+  currency: Currency;
+  counterparty_id: string | null;
+  counterparty_name: string | null;
+  amount: string;
+  amount_cents: number;
+  outstanding: string;
+  outstanding_cents: number;
+}
