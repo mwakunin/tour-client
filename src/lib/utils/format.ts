@@ -66,3 +66,22 @@ export const generateSlug = (text: string): string => {
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
 };
+
+/**
+ * Today, as the calendar on the operator's wall reads it.
+ *
+ * `new Date().toISOString().slice(0, 10)` is the UTC date, which is a
+ * different day from local for part of every day: in Nairobi (UTC+3) at 01:30
+ * it returns yesterday, and in New York (UTC-4) at 21:00 it returns tomorrow.
+ * Both were reachable — this seeds `issued_on` on a supplier invoice and
+ * `occurred_on` on a payment, and the second of those picks the exchange rate
+ * the ledger converts at.
+ *
+ * The mirror of toLocalDate above: that one stops a date-only string being
+ * read as a UTC instant, this one stops today being written as one.
+ */
+export const todayLocal = (): string => {
+  const now = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+};
