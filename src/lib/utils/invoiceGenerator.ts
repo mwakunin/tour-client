@@ -328,16 +328,10 @@ export const generateInvoice = (booking: BookingData) => {
   doc.save(filename);
 };
 
-// Alternative: Generate and return as blob (for preview or email)
-export const generateInvoiceBlob = (booking: BookingData): Blob => {
-  const doc = new jsPDF();
-  // ... (same code as above) ...
-  return doc.output("blob");
-};
-
-// Generate and return as base64 (for API upload)
-export const generateInvoiceBase64 = (booking: BookingData): string => {
-  const doc = new jsPDF();
-  // ... (same code as above) ...
-  return doc.output("datauristring");
-};
+// generateInvoiceBlob and generateInvoiceBase64 used to live here. Both built
+// a fresh jsPDF, drew nothing -- their bodies were the comment
+// "... (same code as above) ..." -- and returned it, so either would have
+// handed back a blank page. Nothing imported them; the only caller of this
+// module uses generateInvoice. Removed rather than completed, because there
+// is no second export to keep in step with the drawing above until something
+// actually needs one.

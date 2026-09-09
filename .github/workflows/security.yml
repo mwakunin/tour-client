@@ -1,5 +1,12 @@
 name: Security Checks
 
+# Least privilege. Without a permissions block the default GITHUB_TOKEN is
+# whatever the repository grants, which for a workflow that runs dependency
+# installs and build scripts from a pull request is more than it needs. Jobs
+# that need more declare it themselves.
+permissions:
+  contents: read
+
 on:
   push:
     branches: [main, master, develop]
@@ -17,6 +24,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -50,6 +59,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
@@ -72,6 +83,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          persist-credentials: false
           fetch-depth: 0
 
       - name: TruffleHog Secret Scan

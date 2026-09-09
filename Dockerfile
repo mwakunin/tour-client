@@ -15,6 +15,23 @@ RUN npm install -g pnpm
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# next.config.ts reads process.env.API_URL to build the /api/* rewrite, and
+# Next bakes that destination into routes-manifest.json during `pnpm build`.
+# Without it here the build falls back to http://localhost:3000, and no
+# runtime environment variable can move it afterwards — the shipped image
+# simply cannot reach the API. Passed from docker-compose.prod.yml and from
+# the build workflow.
+ARG API_URL
+ENV API_URL=$API_URL
+
+# Public values are inlined into the client bundle at build time too, so they
+# have to be present now rather than at `docker run`.
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_SENTRY_DSN
+ENV NEXT_PUBLIC_SENTRY_DSN=$NEXT_PUBLIC_SENTRY_DSN
+
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 RUN pnpm build

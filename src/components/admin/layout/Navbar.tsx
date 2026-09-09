@@ -1,19 +1,60 @@
 "use client";
 
 import { Menu, Bell, User, LogOut, Settings } from "lucide-react";
-import { authApi } from "@/lib/api/auth";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface NavbarProps {
   toggleSidebar: () => void;
 }
 
 export default function Navbar({ toggleSidebar }: NavbarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    authApi.logout();
+  // Open state, rather than CSS :hover alone. The menu was shown only by
+  // hover alone, so a keyboard user tabbing to the trigger got nothing and a
+  // touch user had no hover to give -- Profile, Settings and Logout were
+  // simply unreachable for both. Hover still opens it; this adds the ways in
+  // that were missing.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const onPointerDown = (event: MouseEvent | TouchEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setMenuOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMenuOpen(false);
+    };
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [menuOpen]);
+
+  // Through the context, not authApi directly. The context's logout captures
+  // user_logged_out and calls posthog.reset(); going straight to authApi
+  // skipped both, so the PostHog distinct id stayed bound to the person who
+  // had just signed out and the next session on that browser reported under
+  // their identity.
+  //
+  // Awaited, and followed by a navigation. Neither happened before, so the
+  // admin shell stayed on screen after sign-out until something else caused a
+  // route change — looking, from the user's side, as though logout had failed.
+  const handleLogout = async () => {
+    setMenuOpen(false);
+    await logout();
+    router.replace("/auth/login");
   };
 
   // Get user initials for avatar
@@ -55,8 +96,19 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
         </button> */}
 
         {/* User Menu */}
-        <div className="group relative">
-          <button className="flex items-center space-x-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700">
+        <div
+          className="relative"
+          ref={menuRef}
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            className="flex items-center space-x-3 rounded-lg px-3 py-2 text-gray-700 transition-colors hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-700"
+          >
             {/* User Avatar */}
             <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold text-white">
               {getUserInitials()}
@@ -72,7 +124,12 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
           </button>
 
           {/* Dropdown Menu */}
-          <div className="invisible absolute right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white opacity-0 shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100 dark:border-gray-700 dark:bg-gray-800">
+          <div
+            role="menu"
+            className={`absolute right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg transition-all duration-200 dark:border-gray-700 dark:bg-gray-800 ${
+              menuOpen ? "visible opacity-100" : "invisible opacity-0"
+            }`}
+          >
             {/* User Info in Dropdown */}
             <div className="border-b border-gray-200 px-4 py-3 dark:border-gray-700">
               <p className="text-sm font-medium text-gray-900 dark:text-white">

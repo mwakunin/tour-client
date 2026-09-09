@@ -1,4 +1,16 @@
-name: footloose-client
+# Explicit, and tourops-scoped: this is a second `client` folder alongside
+# footloose/client, and without a name Compose calls the project after the
+# directory and the two stacks share volumes and networks.
+name: tourops-client-prod
+# RUN THIS WITH --env-file:
+#
+#   docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+#
+# The ${...} below are Compose *interpolation*, which reads the shell
+# environment and the project's .env — NOT the service's `env_file:`, which is
+# only injected into the running container. So API_URL living in
+# .env.production is invisible here without --env-file, and the build stops on
+# the required-variable guard before it starts.
 
 services:
   # Next.js Frontend
@@ -6,13 +18,24 @@ services:
     build:
       context: .
       target: production
-    container_name: footloose-frontend-prod
+      # Build-time, not runtime. next.config.ts reads API_URL when it builds
+      # the /api/* rewrite and Next bakes the destination into the image, so a
+      # value supplied at `docker run` arrives far too late. Same for the
+      # NEXT_PUBLIC_* values, which are inlined into the client bundle.
+      args:
+        API_URL: ${API_URL:?set API_URL, e.g. https://api.example.com}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
+    container_name: tourops-frontend-prod
     ports:
       - "3001:3001"
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      # NEXT_PUBLIC_API_URL is deliberately NOT repeated here. `environment:`
+      # wins over `env_file:`, so an unset shell variable interpolated to an
+      # empty string would have overridden the value .env.production supplies.
+      # It is a build-time value anyway — see build.args above.
     env_file:
       - .env.production
     restart: always
@@ -27,5 +50,9 @@ services:
 
 networks:
   default:
-    name: footloose-api_footloose-network
+    # The network the API's prod stack creates. It was
+    # footloose-api_footloose-network until the API renamed its compose
+    # project and network to tourops-*; this pointed at a network that no
+    # longer exists, so the frontend container would fail to start.
+    name: tourops-api-prod_tourops-network
     external: true
