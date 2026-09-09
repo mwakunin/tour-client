@@ -109,7 +109,17 @@ export default function PayablesPage({ params }: { params: Promise<{ id: string 
             setForm(emptyForm());
             setDialogOpen(true);
           }}
-          disabled={outstandingCents === 0}
+          // Three states again, and only two of them should block this.
+          // payables is [] while loading AND when the query failed, so
+          // outstandingCents is 0 in both — which disabled the button after a
+          // read error and left an operator unable to record a transfer they
+          // had already sent. Recording a payment needs the counterparty id
+          // and the form, not the list.
+          //
+          // Still disabled when the list loaded and is genuinely empty: the
+          // API answers 422 for paying somebody owed nothing, so offering the
+          // form there is offering a rejection.
+          disabled={isLoading || (!isError && outstandingCents === 0)}
         >
           <Banknote size={16} className="mr-2" />
           Record payment
