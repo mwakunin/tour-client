@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { API_ORIGIN } from "@/lib/api/origin";
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,10 +17,10 @@ export default function ChatWidget() {
   // Persistent quick replies - always show these
   const persistentReplies = ["Show tours", "Pricing", "Contact"];
 
-  // Relative so it resolves against whatever origin the app is served from and
-  // goes through the /api/* rewrite. Was hardcoded to the .co.ke apex, which
-  // does not serve this app.
-  const WEBHOOK_URL = "/api/chat";
+  // Absolute, at the API's origin. This was relative because the /api/*
+  // rewrite made it same-origin; with the rewrite gone a relative path posts
+  // to the Next server, which has no /api/chat route.
+  const WEBHOOK_URL = `${API_ORIGIN}/api/chat`;
 
   const sendMessage = async (message?: string) => {
     const messageToSend = message || inputValue.trim();

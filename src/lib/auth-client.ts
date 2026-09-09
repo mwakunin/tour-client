@@ -1,12 +1,22 @@
 import { createAuthClient } from "better-auth/react";
 
-// Empty baseURL resolves to `window.location.origin + "/api/auth"`, so auth
-// requests stay same-origin and go through the /api/* rewrite in next.config.ts.
-// Keeping cookies first-party is what fixes the OAuth state_mismatch in prod.
-// Do NOT set NEXT_PUBLIC_BETTER_AUTH_URL or NEXT_PUBLIC_AUTH_URL — better-auth
-// reads those and they would override this.
+import { API_ORIGIN } from "./api/origin";
+
+// The API's own origin. better-auth appends /api/auth, which is where the
+// server mounts it.
+//
+// This was deliberately empty before, resolving to window.location.origin so
+// auth went through the /api/* rewrite. That existed because production ran
+// vercel.app against run.app -- separate registrable domains, so the OAuth
+// state cookie was partitioned away from the callback that had to read it.
+// Two subdomains of one domain are same-site and do not have that problem,
+// but the session cookie does need COOKIE_DOMAIN set on the API so this app's
+// middleware can read it server-side.
+//
+// Do NOT also set NEXT_PUBLIC_BETTER_AUTH_URL or NEXT_PUBLIC_AUTH_URL --
+// better-auth reads those and they would override this silently.
 export const authClient = createAuthClient({
-  baseURL: "",
+  baseURL: API_ORIGIN,
 });
 
 export type AuthUser = typeof authClient.$Infer.Session.user & {

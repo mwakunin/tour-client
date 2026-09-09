@@ -14,6 +14,7 @@ import {
   Users,
   X,
   Banknote,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -29,6 +30,10 @@ const navigation = [
   { name: "Bookings", href: "/admin/bookings", icon: Calendar },
   { name: "Users", href: "/admin/users", icon: Users },
   { name: "payments", href: "/admin/payments", icon: Banknote },
+
+  // The cost side. One entry, because one page exists — the previous attempt
+  // added all five ahead of their pages and every one of them 404'd.
+  { name: "Suppliers & Agents", href: "/admin/counterparties", icon: Truck },
   { name: "Media", href: "/admin/media", icon: Image },
   { name: "Blog", href: "/admin/blog", icon: Image },
   { name: "Blog Categories", href: "/admin/blog/categories", icon: Image },

@@ -24,7 +24,13 @@ services:
       # NEXT_PUBLIC_* values, which are inlined into the client bundle.
       args:
         API_URL: ${API_URL:?set API_URL, e.g. https://api.example.com}
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-}
+        # Required, not defaulted. The browser calls the API at this origin
+        # and it is inlined into the bundle, so an empty value ships a
+        # frontend that talks to localhost and cannot be corrected at runtime.
+        # next.config.ts only warns, because `next lint` loads it the same way
+        # `next build` does and cannot tell them apart — so the deploy is
+        # where this gets enforced.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:?set NEXT_PUBLIC_API_URL, e.g. https://api.example.com}
         NEXT_PUBLIC_SENTRY_DSN: ${NEXT_PUBLIC_SENTRY_DSN:-}
     container_name: tourops-frontend-prod
     ports:
