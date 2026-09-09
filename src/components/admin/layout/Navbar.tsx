@@ -1,19 +1,30 @@
 "use client";
 
 import { Menu, Bell, User, LogOut, Settings } from "lucide-react";
-import { authApi } from "@/lib/api/auth";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 interface NavbarProps {
   toggleSidebar: () => void;
 }
 
 export default function Navbar({ toggleSidebar }: NavbarProps) {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    authApi.logout();
+  // Through the context, not authApi directly. The context's logout captures
+  // user_logged_out and calls posthog.reset(); going straight to authApi
+  // skipped both, so the PostHog distinct id stayed bound to the person who
+  // had just signed out and the next session on that browser reported under
+  // their identity.
+  //
+  // Awaited, and followed by a navigation. Neither happened before, so the
+  // admin shell stayed on screen after sign-out until something else caused a
+  // route change — looking, from the user's side, as though logout had failed.
+  const handleLogout = async () => {
+    await logout();
+    router.replace("/auth/login");
   };
 
   // Get user initials for avatar

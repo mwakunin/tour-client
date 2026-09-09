@@ -28,10 +28,23 @@ export const authApi = {
     // Relative so it goes through the /api/* rewrite and carries the session
     // cookie. An absolute URL to the API host would be cross-site and send no
     // cookie at all, which requireAuth answers with a 401.
-    const response = await fetch(`/api/auth/force-logout/${userId}`, {
+    // Encoded: a userId carrying a slash would otherwise change which path
+    // this posts to.
+    const response = await fetch(`/api/auth/force-logout/${encodeURIComponent(userId)}`, {
       method: "POST",
       credentials: "include",
     });
+
+    // fetch does not reject on 4xx or 5xx. Returning response.json()
+    // unconditionally meant a 401, 403 or 500 resolved like a success and the
+    // caller reported the user signed out when nothing had happened -- and if
+    // the error body was not JSON, the parse error surfaced instead of the
+    // status that caused it.
+    if (!response.ok) {
+      throw new Error(
+        `Force logout failed for ${userId}: ${response.status} ${response.statusText}`
+      );
+    }
     return response.json();
   },
 };

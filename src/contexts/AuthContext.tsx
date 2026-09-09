@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, useEffect, ReactNode } from "react";
 import { useSession, type AuthUser } from "@/lib/auth-client";
 import { authApi } from "@/lib/api/auth";
 import { usePostHog } from "posthog-js/react";
@@ -24,12 +24,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     posthog?.reset();
   };
 
-  if (session?.user) {
-    posthog?.identify(session.user.id, {
-      email: session.user.email,
-      name: session.user.name,
-    });
-  }
+  // In an effect, not the render body. React may render a component without
+  // committing it -- Strict Mode renders twice, and concurrent rendering can
+  // discard work -- so calling identify during render fired it for renders
+  // that never happened and repeated it on every render of everything below
+  // this provider. Keyed on the user id, so it runs once per signed-in user.
+  const userId = session?.user?.id;
+  const userEmail = session?.user?.email;
+  const userName = session?.user?.name;
+
+  useEffect(() => {
+    if (!userId) return;
+    posthog?.identify(userId, { email: userEmail, name: userName });
+  }, [posthog, userId, userEmail, userName]);
 
   return (
     <AuthContext.Provider
