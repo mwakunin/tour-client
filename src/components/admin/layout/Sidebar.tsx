@@ -18,6 +18,7 @@ import {
   FileText,
   ArrowLeftRight,
   Inbox,
+  Wallet,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 
@@ -42,6 +43,7 @@ const navigation = [
   // landed at all.
   { name: "Unmatched Receipts", href: "/admin/settlements", icon: ArrowLeftRight },
   { name: "Ledger Outbox", href: "/admin/ledger-outbox", icon: Inbox },
+  { name: "FX Rates", href: "/admin/fx-rates", icon: Wallet },
   { name: "Media", href: "/admin/media", icon: Image },
   { name: "Blog", href: "/admin/blog", icon: Image },
   { name: "Blog Categories", href: "/admin/blog/categories", icon: Image },
