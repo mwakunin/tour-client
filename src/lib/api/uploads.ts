@@ -1,10 +1,20 @@
 import { apiClient } from "./client";
 
+/**
+ * Long enough for a large image on a slow connection, short enough that a
+ * stalled server surfaces as an error the UI can show. Not a guess at how
+ * long an upload takes -- it is the point at which silence means failure.
+ */
+const UPLOAD_TIMEOUT_MS = 120_000;
+
 export const uploadsApi = {
   uploadSingle: async (
     file: File,
     folder?: string,
-    onUploadProgress?: (progress: number) => void
+    onUploadProgress?: (progress: number) => void,
+    // Lets a caller abandon an upload — navigating away, or the user
+    // cancelling — instead of holding the request until the timeout.
+    signal?: AbortSignal
   ) => {
     const formData = new FormData();
     formData.append("file", file);
@@ -12,7 +22,12 @@ export const uploadsApi = {
 
     const { data } = await apiClient.post("/uploads/single", formData, {
       headers: { "Content-Type": "multipart/form-data" },
-      timeout: 0,
+      // Bounded. timeout: 0 meant a server that accepted the connection and
+      // then stalled left the promise pending for as long as the tab lived,
+      // with the upload UI stuck on a progress bar that would never move and
+      // no way for the caller to give up.
+      timeout: UPLOAD_TIMEOUT_MS,
+      signal,
       onUploadProgress: (progressEvent) => {
         if (onUploadProgress && progressEvent.total) {
           const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
@@ -26,7 +41,10 @@ export const uploadsApi = {
   uploadMultiple: async (
     files: File[],
     folder?: string,
-    onUploadProgress?: (progress: number) => void
+    onUploadProgress?: (progress: number) => void,
+    // Lets a caller abandon an upload — navigating away, or the user
+    // cancelling — instead of holding the request until the timeout.
+    signal?: AbortSignal
   ) => {
     const formData = new FormData();
     files.forEach((file) => formData.append("files", file));
@@ -35,7 +53,8 @@ export const uploadsApi = {
     try {
       const { data } = await apiClient.post("/uploads/multiple", formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        timeout: 0,
+        timeout: UPLOAD_TIMEOUT_MS,
+        signal,
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
             const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);

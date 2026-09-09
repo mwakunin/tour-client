@@ -54,7 +54,11 @@ export default function Breadcrumbs() {
   return (
     <nav className="mb-6 flex items-center space-x-2 text-sm text-gray-600">
       {/* Home Icon */}
-      <Link href="/admin" className="flex items-center transition-colors hover:text-gray-900">
+      <Link
+        href="/admin"
+        className="flex items-center transition-colors hover:text-gray-900"
+        aria-label="Admin dashboard"
+      >
         <Home size={16} />
       </Link>
 

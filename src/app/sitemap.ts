@@ -16,9 +16,19 @@ const apiBase =
 // Regenerate hourly rather than freezing whatever existed at build time
 export const revalidate = 3600;
 
+/**
+ * Long enough for a cold backend, short enough that the sitemap still builds.
+ * Without it, a server that accepts the connection and then stalls mid-body
+ * leaves response.json() pending forever -- and Promise.allSettled below can
+ * never fall back to the static routes, because a hanging promise never
+ * settles at all.
+ */
+const SITEMAP_FETCH_TIMEOUT_MS = 10_000;
+
 const fetchList = async (path: string): Promise<any[]> => {
   const response = await fetch(`${apiBase}/api/${path}`, {
     next: { revalidate },
+    signal: AbortSignal.timeout(SITEMAP_FETCH_TIMEOUT_MS),
   });
 
   if (!response.ok) {
