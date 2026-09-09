@@ -19,9 +19,25 @@ const nextConfig: NextConfig = {
   // requires a redeploy. Origin only, no trailing slash.
   //
   // A plain array is `afterFiles`, which runs after filesystem routes — the
-  // app's own /api/sentry-example-api route handler still wins over this.
+  // app's own /api/health route handler still wins over this.
   async rewrites() {
     const apiOrigin = process.env.API_URL || "http://localhost:3000";
+
+    // Session cookies ride this proxy. Over plain http to anything but the
+    // local machine they cross the network in clear, and because the
+    // destination is baked in at build time a mistake here ships in the image
+    // and cannot be corrected at runtime — so it fails the build instead.
+    // Loopback stays http for local development.
+    try {
+      const { protocol, hostname } = new URL(apiOrigin);
+      const loopback = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+      if (protocol !== "https:" && !loopback) {
+        throw new Error(`API_URL must use https for a non-local host. Got ${apiOrigin}.`);
+      }
+    } catch (error) {
+      throw new Error(`API_URL is not a usable origin (${apiOrigin}): ${(error as Error).message}`);
+    }
+
     console.log(`🔧 [Next.js] Proxying /api/* → ${apiOrigin}`);
     return [
       {

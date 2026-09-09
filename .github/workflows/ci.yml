@@ -1,5 +1,12 @@
 name: CI
 
+# Least privilege. Without a permissions block the default GITHUB_TOKEN is
+# whatever the repository grants, which for a workflow that runs dependency
+# installs and build scripts from a pull request is more than it needs. Jobs
+# that need more declare it themselves.
+permissions:
+  contents: read
+
 # baseline as well as main. Feature branches are opened against baseline so
 # their diff is the work rather than the whole fork, and a workflow watching
 # only main would never run on any of them — which is why this PR arrived
@@ -18,6 +25,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # pnpm, not npm. There is no package-lock.json in this repo -- only
       # pnpm-lock.yaml -- so `npm ci` fails before installing anything, and
@@ -63,6 +72,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
