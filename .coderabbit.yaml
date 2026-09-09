@@ -16,6 +16,14 @@
 # CURRENTLY TUNED FOR: PR #1 (feat/cost-side-admin) — the money-layer API
 # client, the CI conversion to pnpm, and the pricing type fixes. 73 files.
 #
+# EVERY PATTERN HERE IS AN EXCLUSION, AND THAT IS LOAD-BEARING. The first
+# version of this file listed one file positively, to keep Sidebar.tsx in the
+# review after excluding the directory around it. A single non-negated pattern
+# turns the whole list into an allowlist, and CodeRabbit answered "Files
+# ignored due to path filters (242)" — everything, including the file the
+# pattern named. tour-api's config is exclusions only for the same reason.
+# Keep a file by not excluding it, never by adding it back.
+#
 # WHEN THE NEXT PHASE LANDS, CHANGE THIS. The admin pages are excluded below
 # because this PR does not add any; Phase 1 onwards puts every new page under
 # src/app/(admin) and src/components/admin, and shipping those unreviewed
@@ -31,7 +39,9 @@
 #   src/components/ui/**   shadcn primitives, generated rather than written
 #   src/app/auth/**        inherited auth pages, untouched by this work
 #   src/app/(admin)/**     inherited admin pages — SEE THE NOTE ABOVE
-#   src/components/admin/  same, except the one nav file this PR edits
+#   src/components/admin/  the inherited subdirectories, named one by one so
+#     {bookings,dashboard,   that layout/ survives — Sidebar.tsx is in it and
+#      forms,tables,users}   this PR edits it
 #   **/__tests__/**        large, and re-including them puts this over the cap
 #   *.md                   prose
 #   pnpm-lock.yaml         machine-generated
@@ -49,8 +59,13 @@ reviews:
     - "!src/components/public/**"
     - "!src/app/auth/**"
     - "!src/components/auth/**"
-    # Inherited admin surface. Re-include when a PR actually changes it —
-    # which Phase 1 will.
+    # Inherited admin surface. Stop excluding these when a PR actually
+    # changes them — which Phase 1 will.
     - "!src/app/(admin)/**"
-    - "!src/components/admin/**"
-    - "src/components/admin/layout/Sidebar.tsx"
+    # Named individually rather than as src/components/admin/**, so that
+    # layout/ — which holds the Sidebar this PR edits — stays reviewable.
+    - "!src/components/admin/bookings/**"
+    - "!src/components/admin/dashboard/**"
+    - "!src/components/admin/forms/**"
+    - "!src/components/admin/tables/**"
+    - "!src/components/admin/users/**"
