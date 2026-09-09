@@ -50,7 +50,7 @@ export default function PageHero({
       className={cn(
         "relative flex flex-col justify-center overflow-hidden",
         heightClass,
-        image ? "bg-inverse-surface" : "bg-gradient-to-br from-primary to-primary-container"
+        image ? "bg-inverse-surface" : "from-primary to-primary-container bg-gradient-to-br"
       )}
     >
       {image && (
@@ -61,11 +61,9 @@ export default function PageHero({
         </>
       )}
 
-      <div className={cn("container relative z-10 mx-auto flex flex-col px-4", alignClass)}>
+      <div className={cn("relative z-10 container mx-auto flex flex-col px-4", alignClass)}>
         <h1 className="text-display-lg text-white">{title}</h1>
-        {description && (
-          <p className="mt-4 max-w-2xl text-body-lg text-white/90">{description}</p>
-        )}
+        {description && <p className="text-body-lg mt-4 max-w-2xl text-white/90">{description}</p>}
         {children && <div className="mt-8 w-full max-w-2xl">{children}</div>}
       </div>
     </section>

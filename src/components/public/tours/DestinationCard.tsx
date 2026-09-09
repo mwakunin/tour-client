@@ -25,7 +25,7 @@ export const DestinationCard = ({
     href={`/destinations/${destination.slug}`}
     className={cn(
       "group shadow-elevated relative block w-full overflow-hidden rounded-none",
-      className,
+      className
     )}
   >
     <Image

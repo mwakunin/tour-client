@@ -41,7 +41,9 @@ describe("toursApi", () => {
             images: [],
             includes: [],
             excludes: [],
-            pricing_periods: [], itinerary: [], destinations: [],
+            pricing_periods: [],
+            itinerary: [],
+            destinations: [],
           },
           {
             id: "2",
@@ -49,7 +51,9 @@ describe("toursApi", () => {
             images: [],
             includes: [],
             excludes: [],
-            pricing_periods: [], itinerary: [], destinations: [],
+            pricing_periods: [],
+            itinerary: [],
+            destinations: [],
           },
         ],
       };
@@ -93,7 +97,9 @@ describe("toursApi", () => {
             images: [],
             includes: [],
             excludes: [],
-            pricing_periods: [], itinerary: [], destinations: [],
+            pricing_periods: [],
+            itinerary: [],
+            destinations: [],
           },
         ],
       };
@@ -129,7 +135,9 @@ describe("toursApi", () => {
             images: [],
             includes: [],
             excludes: [],
-            pricing_periods: [], itinerary: [], destinations: [],
+            pricing_periods: [],
+            itinerary: [],
+            destinations: [],
           },
         ],
       };
@@ -164,7 +172,9 @@ describe("toursApi", () => {
             images: [],
             includes: [],
             excludes: [],
-            pricing_periods: [], itinerary: [], destinations: [],
+            pricing_periods: [],
+            itinerary: [],
+            destinations: [],
           },
         ],
       };
@@ -202,7 +212,9 @@ describe("toursApi", () => {
             images: [],
             includes: [],
             excludes: [],
-            pricing_periods: [], itinerary: [], destinations: [],
+            pricing_periods: [],
+            itinerary: [],
+            destinations: [],
           },
         ],
       };
@@ -239,7 +251,9 @@ describe("toursApi", () => {
             images: [],
             includes: [],
             excludes: [],
-            pricing_periods: [], itinerary: [], destinations: [],
+            pricing_periods: [],
+            itinerary: [],
+            destinations: [],
           },
         ],
       };
@@ -273,7 +287,9 @@ describe("toursApi", () => {
           images: [],
           includes: [],
           excludes: [],
-          pricing_periods: [], itinerary: [], destinations: [],
+          pricing_periods: [],
+          itinerary: [],
+          destinations: [],
         },
       };
       (apiClient.get as jest.Mock).mockResolvedValueOnce({ data: mockData });
@@ -305,7 +321,9 @@ describe("toursApi", () => {
           images: [],
           includes: [],
           excludes: [],
-          pricing_periods: [], itinerary: [], destinations: [],
+          pricing_periods: [],
+          itinerary: [],
+          destinations: [],
         },
       };
       (apiClient.get as jest.Mock).mockResolvedValueOnce({ data: mockData });
@@ -364,7 +382,9 @@ describe("toursApi", () => {
           images: [],
           includes: [],
           excludes: [],
-          pricing_periods: [], itinerary: [], destinations: [],
+          pricing_periods: [],
+          itinerary: [],
+          destinations: [],
         },
       };
       (apiClient.post as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
@@ -402,7 +422,9 @@ describe("toursApi", () => {
           images: [],
           includes: [],
           excludes: [],
-          pricing_periods: [], itinerary: [], destinations: [],
+          pricing_periods: [],
+          itinerary: [],
+          destinations: [],
         },
       };
       (apiClient.patch as jest.Mock).mockResolvedValueOnce({ data: mockResponse });
@@ -465,7 +487,9 @@ describe("toursApi", () => {
           images: [],
           includes: [],
           excludes: [],
-          pricing_periods: [], itinerary: [], destinations: [],
+          pricing_periods: [],
+          itinerary: [],
+          destinations: [],
         })),
         top_tour: mockData.top_tour,
       });
@@ -505,7 +529,9 @@ describe("toursApi", () => {
           images: [],
           includes: [],
           excludes: [],
-          pricing_periods: [], itinerary: [], destinations: [],
+          pricing_periods: [],
+          itinerary: [],
+          destinations: [],
         })),
         top_tour: mockData.top_tour,
       });

@@ -10,21 +10,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ className, label, error, ...props }, ref) => {
     return (
       <div className="w-full">
-        {label && (
-          <label className="label-caps mb-2 block text-on-surface-variant">{label}</label>
-        )}
+        {label && <label className="label-caps text-on-surface-variant mb-2 block">{label}</label>}
         <input
           ref={ref}
           className={cn(
-            "w-full border-0 border-b border-outline-variant bg-transparent px-0 py-2 text-body-md text-on-surface transition-colors",
+            "border-outline-variant text-body-md text-on-surface w-full border-0 border-b bg-transparent px-0 py-2 transition-colors",
             "focus:border-primary focus:ring-0 focus:outline-none",
-            "disabled:cursor-not-allowed disabled:bg-surface-container-low",
+            "disabled:bg-surface-container-low disabled:cursor-not-allowed",
             error && "border-error",
             className
           )}
           {...props}
         />
-        {error && <p className="mt-1 text-sm text-error">{error}</p>}
+        {error && <p className="text-error mt-1 text-sm">{error}</p>}
       </div>
     );
   }
