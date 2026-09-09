@@ -17,6 +17,13 @@ import { authClient } from "@/lib/auth-client";
 const appOrigin = () =>
   typeof window !== "undefined" ? window.location.origin : (process.env.NEXT_PUBLIC_APP_URL ?? "");
 
+/**
+ * Where the API lives. A different origin to appOrigin() now that the browser
+ * calls it directly rather than through a rewrite — the two were the same
+ * value while the proxy existed, which is why this did not need to exist.
+ */
+const apiOrigin = () => process.env.NEXT_PUBLIC_API_URL ?? "";
+
 export const authApi = {
   login: (callbackURL: string = `${appOrigin()}/`) =>
     authClient.signIn.social({ provider: "google", callbackURL }),
@@ -25,15 +32,23 @@ export const authApi = {
     authClient.signUp.email({ name, email, password, callbackURL: `${appOrigin()}/` }),
   logout: () => authClient.signOut(),
   forceLogoutUser: async (userId: string) => {
-    // Relative so it goes through the /api/* rewrite and carries the session
-    // cookie. An absolute URL to the API host would be cross-site and send no
-    // cookie at all, which requireAuth answers with a 401.
+    // Absolute, at the API's origin. This was relative because the /api/*
+    // rewrite made it same-origin; without the rewrite a relative path posts
+    // to the Next server, which has no such route, and answers 404.
+    //
+    // credentials: "include" is what sends the session cookie across the hop.
+    // It works because the two hosts are subdomains of one registrable domain
+    // and the API lists this origin in ALLOWED_ORIGINS.
+    //
     // Encoded: a userId carrying a slash would otherwise change which path
     // this posts to.
-    const response = await fetch(`/api/auth/force-logout/${encodeURIComponent(userId)}`, {
-      method: "POST",
-      credentials: "include",
-    });
+    const response = await fetch(
+      `${apiOrigin()}/api/auth/force-logout/${encodeURIComponent(userId)}`,
+      {
+        method: "POST",
+        credentials: "include",
+      }
+    );
 
     // fetch does not reject on 4xx or 5xx. Returning response.json()
     // unconditionally meant a 401, 403 or 500 resolved like a success and the

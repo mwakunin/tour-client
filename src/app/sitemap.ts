@@ -6,10 +6,13 @@ const baseUrl = "https://www.footlooseadventures.co.ke";
 
 // This runs on the server, where the shared axios client is unusable: its
 // baseURL is relative in development and its error interceptor reads
-// window.location. Talk to the API directly instead — the dev fallback matches
-// the proxy target in next.config.ts.
-// Prefers API_URL, matching the [slug] pages' generateMetadata — that is the
-// var the /api/* rewrite also targets, so there is one origin to configure.
+// window.location. Talk to the API directly instead.
+//
+// Prefers API_URL, matching the [slug] pages' generateMetadata. That is a
+// server-side variable and stays one: this runs on the server, so it never
+// needed the NEXT_PUBLIC_ prefix. Set both to the same origin — the browser
+// reads NEXT_PUBLIC_API_URL and this reads API_URL, and pointing them at
+// different backends is a divergence nothing would report.
 const apiBase =
   process.env.API_URL?.trim() || process.env.NEXT_PUBLIC_API_URL?.trim() || "http://localhost:3000";
 

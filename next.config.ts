@@ -7,52 +7,81 @@ const nextConfig: NextConfig = {
   },
   compress: true, // ✅ Gzip compression
 
-  // Proxy /api/* to the backend in EVERY environment so the browser only ever
-  // talks to this origin. Auth cookies are then first-party, which is what makes
-  // the Google OAuth state cookie survive the top-level redirect back from
-  // Google. Previously this ran in development only, so production went
-  // cross-site (vercel.app ↔ run.app are separate registrable domains) and the
-  // browser partitioned the state cookie into a different jar than the callback
-  // read from — "State not persisted correctly".
+  // NO /api/* REWRITE. The browser talks to the API directly, at
+  // NEXT_PUBLIC_API_URL — app.example.com calling api.example.com.
   //
-  // Read at BUILD time and baked into routes-manifest.json, so changing API_URL
-  // requires a redeploy. Origin only, no trailing slash.
+  // The proxy that used to live here existed for one reason: production ran
+  // vercel.app against run.app, which are separate registrable domains, so the
+  // Google OAuth state cookie was written into a different jar than the
+  // callback read from — "State not persisted correctly". Proxying made every
+  // request first-party and the state survived.
   //
-  // A plain array is `afterFiles`, which runs after filesystem routes — the
-  // app's own /api/health route handler still wins over this.
-  async rewrites() {
-    const apiOrigin = process.env.API_URL || "http://localhost:3000";
+  // Two subdomains of one registrable domain are same-site, so that failure
+  // does not apply: a SameSite=Lax cookie is still sent on app.→api. calls.
+  // What the split does need is COOKIE_DOMAIN on the API, so the session
+  // cookie is scoped to the parent domain and this app's own middleware can
+  // read it server-side — see the note in tour-api's auth.js. Without that,
+  // /admin, /profile and /bookings redirect to login for a signed-in user.
+  //
+  // Do not reintroduce a rewrite here without also removing that: two
+  // mechanisms for the same cookie is how the first one stopped being
+  // understood.
+  //
+  // NEXT_PUBLIC_API_URL is inlined into the client bundle at build time, so
+  // like the rewrite before it, changing it takes a rebuild rather than a
+  // restart. Validated here for that reason.
+  ...(() => {
+    // Falls back to the local API, the way the rewrite target did.
+    //
+    // It does NOT throw when unset, and that is not laziness. `next lint`
+    // loads this file with NODE_ENV=production and NEXT_PHASE unset, exactly
+    // like `next build` does — I probed both — so there is no reading of the
+    // environment here that can tell a deploy from someone linting a fresh
+    // clone. A throw would break lint and jest for everyone to catch a
+    // misconfiguration at the one moment it is already too late.
+    //
+    // Requiring it is the deploy's job, where the answer is unambiguous:
+    // docker-compose.prod.yml refuses to build without it. This warns.
+    const configured = process.env.NEXT_PUBLIC_API_URL?.trim();
+    const apiOrigin = configured || "http://localhost:3000";
 
-    // Session cookies ride this proxy. Over plain http to anything but the
-    // local machine they cross the network in clear, and because the
-    // destination is baked in at build time a mistake here ships in the image
-    // and cannot be corrected at runtime — so it fails the build instead.
-    // Loopback stays http for local development.
-    try {
-      const { protocol, hostname } = new URL(apiOrigin);
-      // URL.hostname keeps the brackets for IPv6: http://[::1]:3000 gives
-      // "[::1]", not "::1", so matching the bare form never fired and a
-      // perfectly local origin was rejected.
-      const loopback =
-        hostname === "localhost" ||
-        hostname === "127.0.0.1" ||
-        hostname === "::1" ||
-        hostname === "[::1]";
-      if (protocol !== "https:" && !loopback) {
-        throw new Error(`API_URL must use https for a non-local host. Got ${apiOrigin}.`);
-      }
-    } catch (error) {
-      throw new Error(`API_URL is not a usable origin (${apiOrigin}): ${(error as Error).message}`);
+    if (!configured) {
+      console.warn(
+        "⚠️  [Next.js] NEXT_PUBLIC_API_URL is unset; the browser will call " +
+          `${apiOrigin}. Fine locally, wrong in anything you deploy — the ` +
+          "value is baked into the bundle and cannot be changed at runtime."
+      );
     }
 
-    console.log(`🔧 [Next.js] Proxying /api/* → ${apiOrigin}`);
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${apiOrigin}/api/:path*`,
-      },
-    ];
-  },
+    // Session cookies ride these requests. Over plain http to anything but the
+    // local machine they cross the network in clear, and because the value is
+    // baked in, a mistake ships inside the image and cannot be corrected at
+    // runtime — so it fails the build instead. Loopback stays http for local
+    // development.
+    let parsed: URL;
+    try {
+      parsed = new URL(apiOrigin);
+    } catch (error) {
+      throw new Error(
+        `NEXT_PUBLIC_API_URL is not a usable origin (${apiOrigin}): ${(error as Error).message}`
+      );
+    }
+
+    // URL.hostname keeps the brackets for IPv6: http://[::1]:3000 gives
+    // "[::1]", not "::1".
+    const loopback =
+      parsed.hostname === "localhost" ||
+      parsed.hostname === "127.0.0.1" ||
+      parsed.hostname === "::1" ||
+      parsed.hostname === "[::1]";
+
+    if (parsed.protocol !== "https:" && !loopback) {
+      throw new Error(`NEXT_PUBLIC_API_URL must use https for a non-local host. Got ${apiOrigin}.`);
+    }
+
+    console.log(`🔧 [Next.js] Browser will call the API at ${apiOrigin}`);
+    return {};
+  })(),
 
   images: {
     qualities: [75, 90, 100], // ✅ Add this line to fix the warning

@@ -1,10 +1,21 @@
 import axios from "axios";
 
-// Always relative: the /api/* rewrite in next.config.ts forwards to the backend
-// in every environment. Keeps requests same-origin so cookies are first-party.
+// Absolute, at the API's own origin. There is no /api/* rewrite any more: the
+// browser calls api.example.com from app.example.com directly.
+//
+// withCredentials below is what carries the session cookie across that hop.
+// It only works because the two are subdomains of one registrable domain --
+// same-site, so a SameSite=Lax cookie is still sent -- and because the API
+// lists this origin in ALLOWED_ORIGINS. Point this at an unrelated domain and
+// the cookie silently stops being sent.
+//
+// Read at build time, not request time: NEXT_PUBLIC_* is inlined into the
+// bundle, so changing it needs a rebuild. next.config.ts validates it there.
 // Browser-only — no server component imports this (see the note in sitemap.ts).
+const apiOrigin = process.env.NEXT_PUBLIC_API_URL ?? "";
+
 export const apiClient = axios.create({
-  baseURL: "/api",
+  baseURL: `${apiOrigin}/api`,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
