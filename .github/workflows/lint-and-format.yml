@@ -21,27 +21,30 @@ jobs:
         uses: actions/checkout@v4
 
       # ✅ Setup Node.js
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          cache: "pnpm"
 
       # ✅ Install dependencies
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       # ✅ Run ESLint
       - name: Run ESLint
-        run: npm run lint
+        run: pnpm run lint
         continue-on-error: false
 
       # ✅ Check Prettier formatting
       - name: Check Prettier formatting
-        run: npm run format:check
+        run: pnpm run format:check
         continue-on-error: false
 
       # ✅ TypeScript type checking
       - name: TypeScript type check
-        run: npm run type-check
+        run: pnpm run type-check
         continue-on-error: false
