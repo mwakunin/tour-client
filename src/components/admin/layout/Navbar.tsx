@@ -15,7 +15,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
   const router = useRouter();
 
   // Open state, rather than CSS :hover alone. The menu was shown only by
-  // group-hover, so a keyboard user tabbing to the trigger got nothing and a
+  // hover alone, so a keyboard user tabbing to the trigger got nothing and a
   // touch user had no hover to give -- Profile, Settings and Logout were
   // simply unreachable for both. Hover still opens it; this adds the ways in
   // that were missing.
@@ -96,7 +96,12 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
         </button> */}
 
         {/* User Menu */}
-        <div className="group relative" ref={menuRef}>
+        <div
+          className="relative"
+          ref={menuRef}
+          onMouseEnter={() => setMenuOpen(true)}
+          onMouseLeave={() => setMenuOpen(false)}
+        >
           <button
             type="button"
             onClick={() => setMenuOpen((open) => !open)}
@@ -121,7 +126,7 @@ export default function Navbar({ toggleSidebar }: NavbarProps) {
           {/* Dropdown Menu */}
           <div
             role="menu"
-            className={`absolute right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg transition-all duration-200 group-hover:visible group-hover:opacity-100 dark:border-gray-700 dark:bg-gray-800 ${
+            className={`absolute right-0 z-50 mt-2 w-56 rounded-lg border border-gray-200 bg-white shadow-lg transition-all duration-200 dark:border-gray-700 dark:bg-gray-800 ${
               menuOpen ? "visible opacity-100" : "invisible opacity-0"
             }`}
           >

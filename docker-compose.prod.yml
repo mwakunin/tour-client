@@ -2,6 +2,15 @@
 # footloose/client, and without a name Compose calls the project after the
 # directory and the two stacks share volumes and networks.
 name: tourops-client-prod
+# RUN THIS WITH --env-file:
+#
+#   docker compose --env-file .env.production -f docker-compose.prod.yml up -d --build
+#
+# The ${...} below are Compose *interpolation*, which reads the shell
+# environment and the project's .env — NOT the service's `env_file:`, which is
+# only injected into the running container. So API_URL living in
+# .env.production is invisible here without --env-file, and the build stops on
+# the required-variable guard before it starts.
 
 services:
   # Next.js Frontend
@@ -23,7 +32,10 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3001
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+      # NEXT_PUBLIC_API_URL is deliberately NOT repeated here. `environment:`
+      # wins over `env_file:`, so an unset shell variable interpolated to an
+      # empty string would have overridden the value .env.production supplies.
+      # It is a build-time value anyway — see build.args above.
     env_file:
       - .env.production
     restart: always

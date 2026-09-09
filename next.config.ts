@@ -30,7 +30,14 @@ const nextConfig: NextConfig = {
     // Loopback stays http for local development.
     try {
       const { protocol, hostname } = new URL(apiOrigin);
-      const loopback = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1";
+      // URL.hostname keeps the brackets for IPv6: http://[::1]:3000 gives
+      // "[::1]", not "::1", so matching the bare form never fired and a
+      // perfectly local origin was rejected.
+      const loopback =
+        hostname === "localhost" ||
+        hostname === "127.0.0.1" ||
+        hostname === "::1" ||
+        hostname === "[::1]";
       if (protocol !== "https:" && !loopback) {
         throw new Error(`API_URL must use https for a non-local host. Got ${apiOrigin}.`);
       }
