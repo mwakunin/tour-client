@@ -272,7 +272,24 @@ export default function CounterpartiesPage() {
           <CounterpartiesTable
             counterparties={data?.data ?? []}
             onEdit={openEdit}
-            onDelete={(row) => deleteMutation.mutate(row.id)}
+            onDelete={(row) => {
+              // No confirmation at all until now: one stray click on a ghost
+              // icon removed a supplier outright. Which of the two things it
+              // does cannot be known here -- the API deletes when there is no
+              // history and deactivates when there is, and only it can tell
+              // -- so the prompt names both rather than promising one.
+              if (
+                !confirm(
+                  `Remove ${row.name}?\n\n` +
+                    "If they have never been invoiced they are deleted for good. " +
+                    "If they have history they are only marked inactive, because " +
+                    "the accounting that references them has to stay."
+                )
+              ) {
+                return;
+              }
+              deleteMutation.mutate(row.id);
+            }}
           />
         )}
       </Card>
