@@ -15,6 +15,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/format";
 import { getApiErrorMessage } from "@/lib/utils/apiError";
 import AdjustPriceDialog from "@/components/admin/bookings/AdjustPriceDialog";
 import { BookingDetailPageSkeleton } from "@/components/ui/skeletons/AdminSkeletons";
+import BookingPnl from "@/components/admin/BookingPnl";
 
 export default function BookingDetailPage() {
   const params = useParams();
@@ -177,6 +178,11 @@ export default function BookingDetailPage() {
       </Card>
 
       {/* Payment Information */}
+      {/* What the trip actually made, beside what the customer paid. The two
+          are different questions and the second one has never been on this
+          page. */}
+      <BookingPnl bookingId={bookingId} />
+
       <Card title="Payment Information">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="flex items-center gap-3">
