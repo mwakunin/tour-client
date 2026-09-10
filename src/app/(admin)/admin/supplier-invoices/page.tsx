@@ -74,8 +74,15 @@ export default function SupplierInvoicesPage() {
   const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
 
   useEffect(() => {
-    if (!isLoading && currentPage > totalPages) setCurrentPage(totalPages);
-  }, [isLoading, currentPage, totalPages]);
+    // !isError too. A failed query leaves data undefined, so totalPages
+    // collapses to 1 and this would send the operator back to page 1 — where
+    // "Try again" then retries a page that never failed, and the one that did
+    // is unreachable. Loading, failed and empty are three states; this clamp
+    // only belongs in the third.
+    if (!isLoading && !isError && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [isLoading, isError, currentPage, totalPages]);
 
   // An invoice write moves what is owed, so the payables view a counterparty
   // page reads has to go too. Both roots, not one shared prefix.

@@ -90,8 +90,15 @@ export default function FxRatesPage() {
   // page 1. Counterparties and supplier invoices already had this; fx-rates
   // did not, which is the same fix missing from the third of three pages.
   useEffect(() => {
-    if (!isLoading && currentPage > totalPages) setCurrentPage(totalPages);
-  }, [isLoading, currentPage, totalPages]);
+    // !isError too. A failed query leaves data undefined, so totalPages
+    // collapses to 1 and this would send the operator back to page 1 — where
+    // "Try again" then retries a page that never failed, and the one that did
+    // is unreachable. Loading, failed and empty are three states; this clamp
+    // only belongs in the third.
+    if (!isLoading && !isError && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [isLoading, isError, currentPage, totalPages]);
 
   const sameCurrency = form.base_currency === form.quote_currency;
 
