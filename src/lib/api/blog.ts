@@ -10,7 +10,7 @@ export interface BlogPostFilters {
   status?: "draft" | "published" | "all";
   category_id?: number;
   search?: string;
-  sort_by?: "created_at" | "published_at" | "title" | "read_time_minutes";
+  sort_by?: "created_at" | "published_at" | "title" | "read_time_minutes" | "views_count";
   sort_order?: "asc" | "desc";
 }
 
@@ -239,7 +239,7 @@ export const blogApi = {
         limit,
         sort_by: "published_at",
         sort_order: "desc",
-      },
+      } satisfies BlogPostFilters,
     });
     return data;
   },
@@ -253,7 +253,10 @@ export const blogApi = {
         limit,
         sort_by: "views_count",
         sort_order: "desc",
-      },
+        // satisfies, not a bare object: these params bypassed BlogPostFilters
+        // entirely, so nothing checked "views_count" against the union and the
+        // API answered 400 in silence. Typed, the mismatch is a build error.
+      } satisfies BlogPostFilters,
     });
     return data;
   },
